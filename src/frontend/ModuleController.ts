@@ -443,6 +443,12 @@ export default class ModuleController {
 
     if (this.config.displayMode === 'instax') {
       const card = this.photoStackRenderer?.addCard(this.imagesDiv!, image);
+      if (card) {
+        this.photoStackRenderer?.updateCaption(
+          card,
+          this.getPhotoCaptionMetadata(image, imageinfo, null)
+        );
+      }
 
       if (this.config.showProgressBar) {
         this.uiBuilder?.restartProgressBar();
@@ -545,7 +551,7 @@ export default class ModuleController {
   ): void {
     this.EXIF.getData(image, () => {
       const rawDateTime = this.EXIF.getTag(image, 'DateTimeOriginal');
-      onMetadata?.(this.getPhotoCaptionMetadata(image, rawDateTime));
+      onMetadata?.(this.getPhotoCaptionMetadata(image, imageinfo, rawDateTime));
 
       // Update image info if enabled
       if (this.config.showImageInfo && this.imageInfoDiv) {
@@ -571,14 +577,17 @@ export default class ModuleController {
 
   private getPhotoCaptionMetadata(
     image: HTMLImageElement,
+    imageinfo: ImageInfo,
     rawDateTime: string | number | number[] | null
   ): PhotoCaptionMetadata {
     return {
-      date: this.formatExifDate(
-        rawDateTime,
-        this.config.photoCaptionDateFormat
-      ),
-      location: this.getExifLocation(image)
+      date:
+        this.formatExifDate(rawDateTime, this.config.photoCaptionDateFormat) ||
+        this.formatTimestampDate(
+          imageinfo.captionDate,
+          this.config.photoCaptionDateFormat
+        ),
+      location: imageinfo.captionLocation || this.getExifLocation(image)
     };
   }
 
@@ -596,6 +605,22 @@ export default class ModuleController {
         'YYYY:MM:DD HH:mm:ss'
       );
       const formatted = dateMoment.format(format);
+      return formatted === 'Invalid date' ? undefined : formatted;
+    } catch {
+      return undefined;
+    }
+  }
+
+  private formatTimestampDate(
+    timestamp: number | undefined,
+    format: string
+  ): string | undefined {
+    if (!Number.isFinite(timestamp)) {
+      return undefined;
+    }
+
+    try {
+      const formatted = this.moment(String(timestamp), 'x').format(format);
       return formatted === 'Invalid date' ? undefined : formatted;
     } catch {
       return undefined;

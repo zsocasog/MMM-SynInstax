@@ -207,7 +207,9 @@ export default class SlideshowController {
           path: image.path,
           data: data || '',
           index: this.imageListManager.index,
-          total: this.imageListManager.getList().length
+          total: this.imageListManager.getList().length,
+          captionDate: image.captionDate,
+          captionLocation: image.captionLocation
         };
         Log.debug(`Sending DISPLAY_IMAGE notification for "${image.path}"`);
         this.notificationCallback(

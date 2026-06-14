@@ -194,6 +194,24 @@ describe('SynologyPhotosClient', () => {
       expect(Log.info).toHaveBeenCalledWith('Found album: VÃ¡logatÃ¡s');
     });
 
+    test('should match Central European mojibake album names', async () => {
+      mockConfig.synologyAlbumName = 'Válogatás';
+      client = new SynologyPhotosClient(mockConfig as ModuleConfig);
+      (axios.get as jest.Mock).mockResolvedValue({
+        data: {
+          success: true,
+          data: {
+            list: [{ id: 2, name: 'VĂˇlogatĂˇs' }]
+          }
+        }
+      });
+
+      const result = await client.findAlbum();
+
+      expect(result).toBe(true);
+      expect(Log.info).toHaveBeenCalledWith('Found album: VĂˇlogatĂˇs');
+    });
+
     test('should return false when album not found', async () => {
       (axios.get as jest.Mock).mockResolvedValue({
         data: {
@@ -345,6 +363,40 @@ describe('SynologyPhotosClient', () => {
 
       expect(Array.isArray(result)).toBe(true);
       expect(Log.info).toHaveBeenCalledWith(expect.stringContaining('Fetched'));
+    });
+
+    test('should map Synology date and address into caption metadata', async () => {
+      (axios.get as jest.Mock).mockResolvedValue({
+        data: {
+          success: true,
+          data: {
+            list: [
+              {
+                id: 1,
+                type: 'photo',
+                filename: 'photo1.jpg',
+                time: 1717243200,
+                additional: {
+                  thumbnail: { cache_key: 'key1' },
+                  address: {
+                    landmark: 'Margitsziget',
+                    city: 'Budapest',
+                    country: 'Magyarország'
+                  },
+                  gps: { latitude: 47.528, longitude: 19.046 }
+                }
+              }
+            ]
+          }
+        }
+      });
+
+      const result = await client.fetchPhotos();
+
+      expect(result[0].captionDate).toBe(1717243200000);
+      expect(result[0].captionLocation).toBe(
+        'Margitsziget, Budapest, Magyarország'
+      );
     });
 
     test('should return empty array on error', async () => {

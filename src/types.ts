@@ -7,6 +7,8 @@ export interface PhotoItem {
   url?: string;
   created: number;
   modified: number;
+  captionDate?: number;
+  captionLocation?: string;
 }
 
 export interface ModuleConfig {
@@ -88,6 +90,8 @@ export interface ImageInfo {
   data: string;
   index: number;
   total: number;
+  captionDate?: number;
+  captionLocation?: string;
 }
 
 export interface PhotoCaptionMetadata {

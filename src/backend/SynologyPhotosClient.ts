@@ -24,7 +24,24 @@ interface SynologyPhoto {
     thumbnail?: {
       cache_key?: string;
     };
+    gps?: {
+      latitude?: number;
+      longitude?: number;
+    };
+    address?: SynologyAddress;
   };
+}
+
+interface SynologyAddress {
+  country?: string;
+  state?: string;
+  county?: string;
+  city?: string;
+  town?: string;
+  village?: string;
+  district?: string;
+  landmark?: string;
+  route?: string;
 }
 
 interface SynologyAlbum {
@@ -42,6 +59,8 @@ interface TagIds {
 }
 
 class SynologyPhotosClient {
+  private static readonly windows1250Decoder = new TextDecoder('windows-1250');
+
   private static readonly windows1252Decoder = new TextDecoder('windows-1252');
 
   private readonly baseUrl: string;
@@ -94,11 +113,12 @@ class SynologyPhotosClient {
     }
   }
 
-  private static encodeUtf8AsWindows1252(value: string): string | null {
+  private static encodeUtf8AsSingleByte(
+    value: string,
+    decoder: TextDecoder
+  ): string | null {
     try {
-      const encoded = SynologyPhotosClient.windows1252Decoder.decode(
-        Buffer.from(value, 'utf8')
-      );
+      const encoded = decoder.decode(Buffer.from(value, 'utf8'));
       return encoded === value ? null : encoded;
     } catch {
       return null;
@@ -125,14 +145,22 @@ class SynologyPhotosClient {
       current = decoded;
     }
 
-    current = value;
-    for (let index = 0; index < 3; index += 1) {
-      const encoded = SynologyPhotosClient.encodeUtf8AsWindows1252(current);
-      if (!encoded) {
-        break;
+    for (const decoder of [
+      SynologyPhotosClient.windows1250Decoder,
+      SynologyPhotosClient.windows1252Decoder
+    ]) {
+      current = value;
+      for (let index = 0; index < 3; index += 1) {
+        const encoded = SynologyPhotosClient.encodeUtf8AsSingleByte(
+          current,
+          decoder
+        );
+        if (!encoded) {
+          break;
+        }
+        addVariant(encoded);
+        current = encoded;
       }
-      addVariant(encoded);
-      current = encoded;
     }
 
     return variants;
@@ -481,7 +509,7 @@ class SynologyPhotosClient {
           limit: this.maxPhotosToFetch,
           passphrase: this.shareToken,
           additional:
-            '["thumbnail","resolution","orientation","video_convert","video_meta","provider_user_id"]'
+            '["thumbnail","resolution","orientation","video_convert","video_meta","provider_user_id","gps","address","exif"]'
         },
         timeout: 30000
       });
@@ -515,7 +543,7 @@ class SynologyPhotosClient {
           limit: this.maxPhotosToFetch,
           _sid: this.sid,
           additional:
-            '["thumbnail","resolution","orientation","video_convert","video_meta","provider_user_id"]'
+            '["thumbnail","resolution","orientation","video_convert","video_meta","provider_user_id","gps","address","exif"]'
         },
         timeout: 30000
       });
@@ -546,7 +574,7 @@ class SynologyPhotosClient {
           album_id: albumId,
           _sid: this.sid,
           additional:
-            '["thumbnail","resolution","orientation","video_convert","video_meta","provider_user_id"]'
+            '["thumbnail","resolution","orientation","video_convert","video_meta","provider_user_id","gps","address","exif"]'
         },
         timeout: 30000
       });
@@ -581,7 +609,7 @@ class SynologyPhotosClient {
         limit: this.maxPhotosToFetch,
         general_tag_id: tagId,
         additional:
-          '["thumbnail","resolution","orientation","video_convert","video_meta","provider_user_id"]'
+          '["thumbnail","resolution","orientation","video_convert","video_meta","provider_user_id","gps","address","exif"]'
       };
 
       if (this.useSharedAlbum) {
@@ -664,6 +692,8 @@ class SynologyPhotosClient {
         url: imageUrl,
         created: photo.time ? photo.time * 1000 : Date.now(),
         modified: photo.indexed_time ? photo.indexed_time * 1000 : Date.now(),
+        captionDate: photo.time ? photo.time * 1000 : undefined,
+        captionLocation: this.formatPhotoLocation(photo),
         id: uniqueId,
         synologyId: photo.id,
         spaceId,
@@ -677,6 +707,35 @@ class SynologyPhotosClient {
     }
 
     return imageList;
+  }
+
+  private formatPhotoLocation(photo: SynologyPhoto): string | undefined {
+    const address = photo.additional?.address;
+    if (address) {
+      const parts = [
+        address.landmark,
+        address.route,
+        address.district,
+        address.village,
+        address.town,
+        address.city,
+        address.county,
+        address.state,
+        address.country
+      ].filter((part): part is string => Boolean(part?.trim()));
+      const uniqueParts = [...new Set(parts)];
+      if (uniqueParts.length > 0) {
+        return uniqueParts.slice(0, 3).join(', ');
+      }
+    }
+
+    const latitude = photo.additional?.gps?.latitude;
+    const longitude = photo.additional?.gps?.longitude;
+    if (Number.isFinite(latitude) && Number.isFinite(longitude)) {
+      return `${latitude!.toFixed(5)}, ${longitude!.toFixed(5)}`;
+    }
+
+    return undefined;
   }
 
   /**
