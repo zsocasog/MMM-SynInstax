@@ -1,0 +1,21 @@
+node_modules
+.idea*
+**filesShownTracker.txt
+.env
+.image-cache/
+coverage/
+output/
+*.js
+!*.config.js
+!*.config.mjs
+!__mocks__/**/*.js
+.eslintcache
+
+# Ignore rollup output
+MMM-SynInsta.js
+node_helper.js
+SynInsta.css
+.eslintcache
+
+output/*
+junit.xml
