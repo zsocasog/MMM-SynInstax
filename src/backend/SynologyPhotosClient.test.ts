@@ -212,6 +212,24 @@ describe('SynologyPhotosClient', () => {
       expect(Log.info).toHaveBeenCalledWith('Found album: VĂˇlogatĂˇs');
     });
 
+    test('should match album names with replacement characters from ISO-8859-1 config files', async () => {
+      mockConfig.synologyAlbumName = 'V\uFFFDlogat\uFFFDs';
+      client = new SynologyPhotosClient(mockConfig as ModuleConfig);
+      (axios.get as jest.Mock).mockResolvedValue({
+        data: {
+          success: true,
+          data: {
+            list: [{ id: 2, name: 'V\u00E1logat\u00E1s' }]
+          }
+        }
+      });
+
+      const result = await client.findAlbum();
+
+      expect(result).toBe(true);
+      expect(Log.info).toHaveBeenCalledWith('Found album: Válogatás');
+    });
+
     test('should return false when album not found', async () => {
       (axios.get as jest.Mock).mockResolvedValue({
         data: {
@@ -300,6 +318,23 @@ describe('SynologyPhotosClient', () => {
           success: true,
           data: {
             list: [{ id: 1, name: 'VÃ¡logatÃ¡s' }]
+          }
+        }
+      });
+
+      const result = await client.findTags();
+
+      expect(result).toBe(true);
+    });
+
+    test('should match tag names with replacement characters from ISO-8859-1 config files', async () => {
+      mockConfig.synologyTagNames = ['V\uFFFDlogat\uFFFDs'];
+      client = new SynologyPhotosClient(mockConfig as ModuleConfig);
+      (axios.get as jest.Mock).mockResolvedValue({
+        data: {
+          success: true,
+          data: {
+            list: [{ id: 1, name: 'V\u00E1logat\u00E1s' }]
           }
         }
       });

@@ -161,11 +161,15 @@
 	bottom: calc(var(--syninsta-frame-width, 16px) * 0.5);
 	left: var(--syninsta-frame-width, 16px);
 	overflow: hidden;
-	color: #202020;
-	font-family: "Comic Sans MS", "Segoe Print", "Bradley Hand", cursive;
-	font-size: clamp(11px, calc(var(--syninsta-frame-width, 16px) * 0.72), 18px);
-	line-height: 1.15;
+	color: #151515;
+	font-family: "Segoe Print", "Comic Sans MS", "Comic Sans", "Chalkboard SE",
+		"Bradley Hand", cursive;
+	font-size: clamp(14px, calc(var(--syninsta-frame-width, 16px) * 1.05), 26px);
+	font-weight: 800;
+	letter-spacing: 0;
+	line-height: 1.05;
 	text-align: center;
+	text-shadow: 0 1px 0 rgba(255, 255, 255, 0.7);
 	text-overflow: ellipsis;
 	white-space: nowrap;
 }

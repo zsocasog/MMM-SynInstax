@@ -104,6 +104,13 @@ class SynologyPhotosClient {
     return value.normalize('NFKC').trim().toLocaleLowerCase('hu-HU');
   }
 
+  private static simplifyName(value: string): string {
+    return SynologyPhotosClient.canonicalizeName(value)
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/gu, '')
+      .replace(/\s+/gu, ' ');
+  }
+
   private static decodeUtf8Mojibake(value: string): string | null {
     try {
       const decoded = Buffer.from(value, 'latin1').toString('utf8');
@@ -166,6 +173,33 @@ class SynologyPhotosClient {
     return variants;
   }
 
+  private static wildcardNameMatches(pattern: string, target: string): boolean {
+    if (!/[\uFFFD?]/u.test(pattern)) {
+      return false;
+    }
+
+    const escapedPattern = pattern
+      .split(/[\uFFFD?]+/u)
+      .map((part) => part.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&'))
+      .join('.{1,4}');
+
+    return new RegExp(`^${escapedPattern}$`, 'u').test(target);
+  }
+
+  private static fuzzyNamesMatch(left: string, right: string): boolean {
+    const leftSimplified = SynologyPhotosClient.simplifyName(left);
+    const rightSimplified = SynologyPhotosClient.simplifyName(right);
+
+    return (
+      leftSimplified === rightSimplified ||
+      SynologyPhotosClient.wildcardNameMatches(
+        leftSimplified,
+        rightSimplified
+      ) ||
+      SynologyPhotosClient.wildcardNameMatches(rightSimplified, leftSimplified)
+    );
+  }
+
   private static namesMatch(left: string, right: string): boolean {
     const leftVariants = SynologyPhotosClient.getNameVariants(left);
     const rightVariants = SynologyPhotosClient.getNameVariants(right);
@@ -173,6 +207,12 @@ class SynologyPhotosClient {
     for (const variant of leftVariants) {
       if (rightVariants.has(variant)) {
         return true;
+      }
+
+      for (const rightVariant of rightVariants) {
+        if (SynologyPhotosClient.fuzzyNamesMatch(variant, rightVariant)) {
+          return true;
+        }
       }
     }
 
