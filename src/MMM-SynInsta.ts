@@ -33,7 +33,10 @@ declare const moment: (
 ) => { format: (format: string) => string };
 declare const EXIF: {
   getData: (image: HTMLImageElement, callback: () => void) => void;
-  getTag: (image: HTMLImageElement, tag: string) => string | number | null;
+  getTag: (
+    image: HTMLImageElement,
+    tag: string
+  ) => string | number | number[] | null;
 };
 
 interface ModuleInstance {
@@ -150,8 +153,13 @@ const moduleDefinition: Partial<ModuleInstance> = {
     frameWidth: 16,
     photoWidth: null,
     photoHeight: null,
-    flyInDuration: 1200,
-    flyOutDuration: 800
+    flyInDuration: 650,
+    flyOutDuration: 350,
+    animateInitialStack: false,
+    showPhotoCaption: true,
+    showPhotoCaptionDate: true,
+    showPhotoCaptionLocation: true,
+    photoCaptionDateFormat: 'YYYY.MM.DD HH:mm'
   } as ModuleConfig,
 
   start(this: ModuleInstance): void {

@@ -84,7 +84,7 @@ export default class SlideshowController {
     // Start slideshow after a short delay
     setTimeout(() => {
       void this.gatherImageList(config, true).then(() => {
-        void this.getNextImage();
+        void this.displayInitialImages(config);
       });
 
       const refreshInterval =
@@ -93,6 +93,15 @@ export default class SlideshowController {
         void this.refreshImageList();
       }, refreshInterval);
     }, 200);
+  }
+
+  private async displayInitialImages(config: ModuleConfig): Promise<void> {
+    const imageCount =
+      config.displayMode === 'instax' ? Math.max(1, config.stackSize) : 1;
+
+    for (let index = 0; index < imageCount; index += 1) {
+      await this.displayNextImage(index === imageCount - 1);
+    }
   }
 
   /**
@@ -141,6 +150,10 @@ export default class SlideshowController {
    * Get and display the next image in the slideshow
    */
   async getNextImage(): Promise<void> {
+    await this.displayNextImage(true);
+  }
+
+  private async displayNextImage(scheduleNextImage: boolean): Promise<void> {
     Log.debug('Getting next image...');
 
     if (!this.imageListManager || this.imageListManager.isEmpty()) {
@@ -206,10 +219,12 @@ export default class SlideshowController {
       synologyClient
     );
 
-    const slideshowSpeed = this.config?.slideshowSpeed || 10000;
-    this.timerManager.startSlideshowTimer(() => {
-      void this.getNextImage();
-    }, slideshowSpeed);
+    if (scheduleNextImage) {
+      const slideshowSpeed = this.config?.slideshowSpeed || 10000;
+      this.timerManager.startSlideshowTimer(() => {
+        void this.getNextImage();
+      }, slideshowSpeed);
+    }
 
     if (this.config?.showAllImagesBeforeRestart) {
       this.imageListManager.addImageToShown(image.path);

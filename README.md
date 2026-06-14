@@ -42,10 +42,14 @@ npm install
     stackFixed: true,
 
     stackSize: 4,
+    animateInitialStack: false,
     frameWidth: 16,
     frameColor: "#fff",
     maxRotation: 8,
-    maxOffset: 30
+    maxOffset: 30,
+
+    showPhotoCaption: true,
+    photoCaptionDateFormat: "YYYY.MM.DD HH:mm"
   }
 }
 ```
@@ -80,30 +84,39 @@ config: {
 }
 ```
 
+Album and tag name matching tolerates common UTF-8 mojibake returned by some
+Synology/browser locale combinations. Use the normal readable name in your
+MagicMirror config, for example `Válogatás`.
+
 ## Instax layout options
 
-| Option                 | Default         | Description                                                                            |
-| ---------------------- | --------------- | -------------------------------------------------------------------------------------- |
-| `displayMode`          | `"instax"`      | Use `"instax"` for the card stack or `"fullscreen"` for the original slideshow layout. |
-| `stackWidth`           | `"100vw"`       | Stack area width. Accepts CSS lengths or numbers in pixels.                            |
-| `stackHeight`          | `"100vh"`       | Stack area height. Accepts CSS lengths or numbers in pixels.                           |
-| `stackTop`             | `"0"`           | CSS `top` position for the stack area.                                                 |
-| `stackRight`           | `"auto"`        | CSS `right` position for the stack area.                                               |
-| `stackBottom`          | `"auto"`        | CSS `bottom` position for the stack area.                                              |
-| `stackLeft`            | `"0"`           | CSS `left` position for the stack area.                                                |
-| `stackTransform`       | `"none"`        | Optional CSS transform, useful for centering with `translate(-50%, -50%)`.             |
-| `stackFixed`           | `true`          | If true, the stack is positioned relative to the screen.                               |
-| `stackZIndex`          | `0`             | CSS z-index for the stack container.                                                   |
-| `stackSize`            | `4`             | Number of visible cards kept on screen.                                                |
-| `photoWidth`           | `null`          | Optional max photo width in pixels.                                                    |
-| `photoHeight`          | `null`          | Optional max photo height in pixels.                                                   |
-| `frameWidth`           | `16`            | Instax frame thickness in pixels.                                                      |
-| `frameColor`           | `"#fff"`        | Frame color.                                                                           |
-| `stackBackgroundColor` | `"transparent"` | Stack area background.                                                                 |
-| `maxRotation`          | `8`             | Maximum random card rotation in degrees.                                               |
-| `maxOffset`            | `30`            | Maximum random card offset in pixels.                                                  |
-| `flyInDuration`        | `1200`          | New card fly-in animation duration in milliseconds.                                    |
-| `flyOutDuration`       | `800`           | Old card fly-out animation duration in milliseconds.                                   |
+| Option                     | Default              | Description                                                                                |
+| -------------------------- | -------------------- | ------------------------------------------------------------------------------------------ |
+| `displayMode`              | `"instax"`           | Use `"instax"` for the card stack or `"fullscreen"` for the original slideshow layout.     |
+| `stackWidth`               | `"100vw"`            | Stack area width. Accepts CSS lengths or numbers in pixels.                                |
+| `stackHeight`              | `"100vh"`            | Stack area height. Accepts CSS lengths or numbers in pixels.                               |
+| `stackTop`                 | `"0"`                | CSS `top` position for the stack area.                                                     |
+| `stackRight`               | `"auto"`             | CSS `right` position for the stack area.                                                   |
+| `stackBottom`              | `"auto"`             | CSS `bottom` position for the stack area.                                                  |
+| `stackLeft`                | `"0"`                | CSS `left` position for the stack area.                                                    |
+| `stackTransform`           | `"none"`             | Optional CSS transform, useful for centering with `translate(-50%, -50%)`.                 |
+| `stackFixed`               | `true`               | If true, the stack is positioned relative to the screen.                                   |
+| `stackZIndex`              | `0`                  | CSS z-index for the stack container.                                                       |
+| `stackSize`                | `4`                  | Number of visible cards kept on screen.                                                    |
+| `animateInitialStack`      | `false`              | If false, the first stack is built immediately without fly-in animations.                  |
+| `photoWidth`               | `null`               | Optional max photo width in pixels.                                                        |
+| `photoHeight`              | `null`               | Optional max photo height in pixels.                                                       |
+| `frameWidth`               | `16`                 | Instax frame thickness in pixels.                                                          |
+| `frameColor`               | `"#fff"`             | Frame color.                                                                               |
+| `stackBackgroundColor`     | `"transparent"`      | Stack area background.                                                                     |
+| `maxRotation`              | `8`                  | Maximum random card rotation in degrees.                                                   |
+| `maxOffset`                | `30`                 | Maximum random card offset in pixels.                                                      |
+| `flyInDuration`            | `650`                | New card fly-in animation duration in milliseconds.                                        |
+| `flyOutDuration`           | `350`                | Old card fly-out animation duration in milliseconds.                                       |
+| `showPhotoCaption`         | `true`               | Show EXIF caption text in the thicker bottom frame area.                                   |
+| `showPhotoCaptionDate`     | `true`               | Include EXIF `DateTimeOriginal` in the card caption.                                       |
+| `showPhotoCaptionLocation` | `true`               | Include EXIF location. Uses textual EXIF location when present, otherwise GPS coordinates. |
+| `photoCaptionDateFormat`   | `"YYYY.MM.DD HH:mm"` | Moment.js format used for the card caption date.                                           |
 
 ## Position examples
 

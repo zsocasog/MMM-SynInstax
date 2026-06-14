@@ -4,7 +4,7 @@
  * Instax/Polaroid-style card stack renderer for Synology photo URLs.
  */
 
-import type { ModuleConfig } from '../types';
+import type { ModuleConfig, PhotoCaptionMetadata } from '../types';
 
 interface StackCard {
   element: HTMLDivElement;
@@ -61,7 +61,12 @@ export default class PhotoStackRenderer {
     const entry = entries[Math.floor(Math.random() * entries.length)];
 
     const card = document.createElement('div');
-    card.className = 'syninsta-card syninsta-fly-in';
+    const animateCard =
+      this.config.animateInitialStack ||
+      this.cards.length >= this.config.stackSize;
+    card.className = animateCard
+      ? 'syninsta-card syninsta-fly-in'
+      : 'syninsta-card';
     card.style.setProperty(
       '--syninsta-rest-x',
       `${this.randomBetween(-this.config.maxOffset, this.config.maxOffset).toFixed(2)}px`
@@ -84,6 +89,12 @@ export default class PhotoStackRenderer {
     this.sizeImage(img, image);
     card.appendChild(img);
 
+    if (this.config.showPhotoCaption) {
+      const caption = document.createElement('div');
+      caption.className = 'syninsta-caption';
+      card.appendChild(caption);
+    }
+
     for (const existing of this.cards) {
       const z = parseInt(existing.element.style.zIndex, 10) || 0;
       existing.element.style.zIndex = String(z - 1);
@@ -93,13 +104,15 @@ export default class PhotoStackRenderer {
     container.appendChild(card);
     this.cards.push({ element: card });
 
-    const settle = (): void => card.classList.remove('syninsta-fly-in');
-    card.addEventListener('animationend', (event) => {
-      if (event.animationName === 'syninsta-fly-in') {
-        settle();
-      }
-    });
-    window.setTimeout(settle, this.config.flyInDuration + 50);
+    if (animateCard) {
+      const settle = (): void => card.classList.remove('syninsta-fly-in');
+      card.addEventListener('animationend', (event) => {
+        if (event.animationName === 'syninsta-fly-in') {
+          settle();
+        }
+      });
+      window.setTimeout(settle, this.config.flyInDuration + 50);
+    }
 
     while (this.cards.length > this.config.stackSize) {
       const oldest = this.cards.shift();
@@ -109,6 +122,27 @@ export default class PhotoStackRenderer {
     }
 
     return card;
+  }
+
+  updateCaption(
+    card: HTMLElement,
+    metadata: PhotoCaptionMetadata | null
+  ): void {
+    if (!this.config.showPhotoCaption || !metadata) {
+      return;
+    }
+
+    const caption = card.querySelector('.syninsta-caption');
+    if (!caption) {
+      return;
+    }
+
+    const parts = [
+      this.config.showPhotoCaptionLocation ? metadata.location : null,
+      this.config.showPhotoCaptionDate ? metadata.date : null
+    ].filter(Boolean);
+
+    caption.textContent = parts.join(' - ');
   }
 
   settleInFlightCards(container: HTMLElement): void {

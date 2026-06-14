@@ -10,6 +10,7 @@
  */
 
 import axios from 'axios';
+import { TextDecoder } from 'node:util';
 import Log from './Logger';
 import type { ModuleConfig, PhotoItem } from '../types';
 
@@ -41,6 +42,8 @@ interface TagIds {
 }
 
 class SynologyPhotosClient {
+  private static readonly windows1252Decoder = new TextDecoder('windows-1252');
+
   private readonly baseUrl: string;
 
   private readonly account: string;
@@ -76,6 +79,76 @@ class SynologyPhotosClient {
     this.tagNames = config.synologyTagNames || [];
     this.useSharedAlbum = Boolean(this.shareToken);
     this.maxPhotosToFetch = config.synologyMaxPhotos || 1000;
+  }
+
+  private static canonicalizeName(value: string): string {
+    return value.normalize('NFKC').trim().toLocaleLowerCase('hu-HU');
+  }
+
+  private static decodeUtf8Mojibake(value: string): string | null {
+    try {
+      const decoded = Buffer.from(value, 'latin1').toString('utf8');
+      return decoded.includes('\uFFFD') || decoded === value ? null : decoded;
+    } catch {
+      return null;
+    }
+  }
+
+  private static encodeUtf8AsWindows1252(value: string): string | null {
+    try {
+      const encoded = SynologyPhotosClient.windows1252Decoder.decode(
+        Buffer.from(value, 'utf8')
+      );
+      return encoded === value ? null : encoded;
+    } catch {
+      return null;
+    }
+  }
+
+  private static getNameVariants(value: string): Set<string> {
+    const variants = new Set<string>();
+    const addVariant = (variant: string | null): void => {
+      if (variant) {
+        variants.add(SynologyPhotosClient.canonicalizeName(variant));
+      }
+    };
+
+    addVariant(value);
+
+    let current = value;
+    for (let index = 0; index < 3; index += 1) {
+      const decoded = SynologyPhotosClient.decodeUtf8Mojibake(current);
+      if (!decoded) {
+        break;
+      }
+      addVariant(decoded);
+      current = decoded;
+    }
+
+    current = value;
+    for (let index = 0; index < 3; index += 1) {
+      const encoded = SynologyPhotosClient.encodeUtf8AsWindows1252(current);
+      if (!encoded) {
+        break;
+      }
+      addVariant(encoded);
+      current = encoded;
+    }
+
+    return variants;
+  }
+
+  private static namesMatch(left: string, right: string): boolean {
+    const leftVariants = SynologyPhotosClient.getNameVariants(left);
+    const rightVariants = SynologyPhotosClient.getNameVariants(right);
+
+    for (const variant of leftVariants) {
+      if (rightVariants.has(variant)) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   /**
@@ -147,8 +220,8 @@ class SynologyPhotosClient {
           return true;
         }
 
-        const targetAlbum = albums.find(
-          (album) => album.name.toLowerCase() === this.albumName.toLowerCase()
+        const targetAlbum = albums.find((album) =>
+          SynologyPhotosClient.namesMatch(album.name, this.albumName)
         );
 
         if (targetAlbum) {
@@ -173,8 +246,11 @@ class SynologyPhotosClient {
    * Filter tags by name
    */
   private filterMatchingTags(allTags: SynologyTag[]): SynologyTag[] {
-    const tagNamesLower = new Set(this.tagNames.map((t) => t.toLowerCase()));
-    return allTags.filter((tag) => tagNamesLower.has(tag.name.toLowerCase()));
+    return allTags.filter((tag) =>
+      this.tagNames.some((tagName) =>
+        SynologyPhotosClient.namesMatch(tag.name, tagName)
+      )
+    );
   }
 
   /**

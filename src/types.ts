@@ -75,6 +75,11 @@ export interface ModuleConfig {
   photoHeight: number | null;
   flyInDuration: number;
   flyOutDuration: number;
+  animateInitialStack: boolean;
+  showPhotoCaption: boolean;
+  showPhotoCaptionDate: boolean;
+  showPhotoCaptionLocation: boolean;
+  photoCaptionDateFormat: string;
 }
 
 export interface ImageInfo {
@@ -83,4 +88,9 @@ export interface ImageInfo {
   data: string;
   index: number;
   total: number;
+}
+
+export interface PhotoCaptionMetadata {
+  date?: string;
+  location?: string;
 }

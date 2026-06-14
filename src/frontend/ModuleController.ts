@@ -5,7 +5,7 @@
  * Handles module lifecycle, notifications, and UI updates.
  */
 
-import type { ImageInfo, ModuleConfig } from '../types';
+import type { ImageInfo, ModuleConfig, PhotoCaptionMetadata } from '../types';
 import ConfigValidator from './ConfigValidator';
 import ImageHandler from './ImageHandler';
 import UIBuilder from './UIBuilder';
@@ -27,7 +27,10 @@ type MomentInterface = (
 
 interface EXIFInterface {
   getData: (image: HTMLImageElement, callback: () => void) => void;
-  getTag: (image: HTMLImageElement, tag: string) => string | number | null;
+  getTag: (
+    image: HTMLImageElement,
+    tag: string
+  ) => string | number | number[] | null;
 }
 
 interface NotificationCallbacks {
@@ -439,14 +442,18 @@ export default class ModuleController {
     );
 
     if (this.config.displayMode === 'instax') {
-      this.photoStackRenderer?.addCard(this.imagesDiv!, image);
+      const card = this.photoStackRenderer?.addCard(this.imagesDiv!, image);
 
       if (this.config.showProgressBar) {
         this.uiBuilder?.restartProgressBar();
       }
 
       setTimeout(() => {
-        this.handleEXIFData(image, imageinfo);
+        this.handleEXIFData(image, imageinfo, (metadata) => {
+          if (card) {
+            this.photoStackRenderer?.updateCaption(card, metadata);
+          }
+        });
       }, 0);
       return;
     }
@@ -531,11 +538,18 @@ export default class ModuleController {
   /**
    * Handle EXIF data extraction and image info update
    */
-  private handleEXIFData(image: HTMLImageElement, imageinfo: ImageInfo): void {
+  private handleEXIFData(
+    image: HTMLImageElement,
+    imageinfo: ImageInfo,
+    onMetadata?: (metadata: PhotoCaptionMetadata) => void
+  ): void {
     this.EXIF.getData(image, () => {
+      const rawDateTime = this.EXIF.getTag(image, 'DateTimeOriginal');
+      onMetadata?.(this.getPhotoCaptionMetadata(image, rawDateTime));
+
       // Update image info if enabled
       if (this.config.showImageInfo && this.imageInfoDiv) {
-        let dateTime = this.EXIF.getTag(image, 'DateTimeOriginal');
+        let dateTime = rawDateTime;
         if (dateTime !== null) {
           try {
             const dateMoment = this.moment(
@@ -553,6 +567,105 @@ export default class ModuleController {
         this.updateImageInfo(imageinfo, String(dateTime || ''));
       }
     });
+  }
+
+  private getPhotoCaptionMetadata(
+    image: HTMLImageElement,
+    rawDateTime: string | number | number[] | null
+  ): PhotoCaptionMetadata {
+    return {
+      date: this.formatExifDate(
+        rawDateTime,
+        this.config.photoCaptionDateFormat
+      ),
+      location: this.getExifLocation(image)
+    };
+  }
+
+  private formatExifDate(
+    rawDateTime: string | number | number[] | null,
+    format: string
+  ): string | undefined {
+    if (rawDateTime === null || Array.isArray(rawDateTime)) {
+      return undefined;
+    }
+
+    try {
+      const dateMoment = this.moment(
+        String(rawDateTime),
+        'YYYY:MM:DD HH:mm:ss'
+      );
+      const formatted = dateMoment.format(format);
+      return formatted === 'Invalid date' ? undefined : formatted;
+    } catch {
+      return undefined;
+    }
+  }
+
+  private getExifLocation(image: HTMLImageElement): string | undefined {
+    const textLocation = this.getFirstExifStringTag(image, [
+      'GPSAreaInformation',
+      'Location',
+      'City',
+      'State',
+      'Country'
+    ]);
+    if (textLocation) {
+      return textLocation;
+    }
+
+    const latitude = this.getGpsCoordinate(
+      this.EXIF.getTag(image, 'GPSLatitude'),
+      this.EXIF.getTag(image, 'GPSLatitudeRef')
+    );
+    const longitude = this.getGpsCoordinate(
+      this.EXIF.getTag(image, 'GPSLongitude'),
+      this.EXIF.getTag(image, 'GPSLongitudeRef')
+    );
+
+    if (latitude === null || longitude === null) {
+      return undefined;
+    }
+
+    return `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`;
+  }
+
+  private getFirstExifStringTag(
+    image: HTMLImageElement,
+    tags: string[]
+  ): string | undefined {
+    for (const tag of tags) {
+      const value = this.EXIF.getTag(image, tag);
+      if (typeof value === 'string' && value.trim()) {
+        return value.trim();
+      }
+    }
+
+    return undefined;
+  }
+
+  private getGpsCoordinate(
+    coordinate: string | number | number[] | null,
+    ref: string | number | number[] | null
+  ): number | null {
+    if (!Array.isArray(coordinate) || coordinate.length < 3) {
+      return null;
+    }
+
+    const degrees = Number(coordinate[0]);
+    const minutes = Number(coordinate[1]);
+    const seconds = Number(coordinate[2]);
+
+    if (![degrees, minutes, seconds].every(Number.isFinite)) {
+      return null;
+    }
+
+    let decimal = degrees + minutes / 60 + seconds / 3600;
+    if (typeof ref === 'string' && ['S', 'W'].includes(ref.toUpperCase())) {
+      decimal *= -1;
+    }
+
+    return decimal;
   }
 
   /**

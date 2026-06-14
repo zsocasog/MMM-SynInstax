@@ -134,14 +134,16 @@
 	padding: var(--syninsta-frame-width, 16px);
 	padding-bottom: calc(var(--syninsta-frame-width, 16px) * 2.5);
 	box-shadow:
-		0 8px 24px rgba(0, 0, 0, 0.4),
-		0 2px 6px rgba(0, 0, 0, 0.3);
-	transform: translate(
+		0 6px 16px rgba(0, 0, 0, 0.28),
+		0 1px 4px rgba(0, 0, 0, 0.22);
+	transform: translate3d(
 			calc(-50% + var(--syninsta-rest-x, 0px)),
-			calc(-50% + var(--syninsta-rest-y, 0px))
+			calc(-50% + var(--syninsta-rest-y, 0px)),
+			0
 		)
 		rotate(var(--syninsta-rest-rotate, 0deg));
 	will-change: transform;
+	backface-visibility: hidden;
 }
 
 .syninsta-image {
@@ -153,19 +155,36 @@
 	object-fit: contain;
 }
 
+.syninsta-caption {
+	position: absolute;
+	right: var(--syninsta-frame-width, 16px);
+	bottom: calc(var(--syninsta-frame-width, 16px) * 0.5);
+	left: var(--syninsta-frame-width, 16px);
+	overflow: hidden;
+	color: #202020;
+	font-family: "Comic Sans MS", "Segoe Print", "Bradley Hand", cursive;
+	font-size: clamp(11px, calc(var(--syninsta-frame-width, 16px) * 0.72), 18px);
+	line-height: 1.15;
+	text-align: center;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
 @keyframes syninsta-fly-in {
 	from {
-		transform: translate(
+		transform: translate3d(
 				calc(-50% + var(--syninsta-in-x, 0vw)),
-				calc(-50% + var(--syninsta-in-y, -100vh))
+				calc(-50% + var(--syninsta-in-y, -100vh)),
+				0
 			)
 			rotate(0deg)
-			scale(1.1);
+			scale(1.03);
 	}
 	to {
-		transform: translate(
+		transform: translate3d(
 				calc(-50% + var(--syninsta-rest-x, 0px)),
-				calc(-50% + var(--syninsta-rest-y, 0px))
+				calc(-50% + var(--syninsta-rest-y, 0px)),
+				0
 			)
 			rotate(var(--syninsta-rest-rotate, 0deg));
 	}
@@ -178,17 +197,19 @@
 
 @keyframes syninsta-fly-out {
 	from {
-		transform: translate(
+		transform: translate3d(
 				calc(-50% + var(--syninsta-rest-x, 0px)),
-				calc(-50% + var(--syninsta-rest-y, 0px))
+				calc(-50% + var(--syninsta-rest-y, 0px)),
+				0
 			)
 			rotate(var(--syninsta-rest-rotate, 0deg));
 		opacity: 1;
 	}
 	to {
-		transform: translate(
+		transform: translate3d(
 				calc(-50% + var(--syninsta-rest-x, 0px)),
-				calc(-50% + var(--syninsta-rest-y, 0px) + 200px)
+				calc(-50% + var(--syninsta-rest-y, 0px) + 120px),
+				0
 			)
 			rotate(var(--syninsta-rest-rotate, 0deg));
 		opacity: 0;
