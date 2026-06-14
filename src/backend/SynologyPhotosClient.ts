@@ -752,20 +752,15 @@ class SynologyPhotosClient {
   private formatPhotoLocation(photo: SynologyPhoto): string | undefined {
     const address = photo.additional?.address;
     if (address) {
-      const parts = [
-        address.landmark,
-        address.route,
-        address.district,
-        address.village,
-        address.town,
+      const city = [
         address.city,
-        address.county,
-        address.state,
+        address.town,
+        address.village,
+        address.district,
         address.country
-      ].filter((part): part is string => Boolean(part?.trim()));
-      const uniqueParts = [...new Set(parts)];
-      if (uniqueParts.length > 0) {
-        return uniqueParts.slice(0, 3).join(', ');
+      ].find((part) => part?.trim());
+      if (city) {
+        return city.trim();
       }
     }
 

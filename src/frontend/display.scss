@@ -132,7 +132,7 @@
 	left: 50%;
 	background: var(--syninsta-frame-color, #fff);
 	padding: var(--syninsta-frame-width, 16px);
-	padding-bottom: calc(var(--syninsta-frame-width, 16px) * 2.5);
+	padding-bottom: calc(var(--syninsta-frame-width, 16px) * 3.75);
 	box-shadow:
 		0 6px 16px rgba(0, 0, 0, 0.28),
 		0 1px 4px rgba(0, 0, 0, 0.22);
@@ -158,14 +158,15 @@
 .syninsta-caption {
 	position: absolute;
 	right: var(--syninsta-frame-width, 16px);
-	bottom: calc(var(--syninsta-frame-width, 16px) * 0.5);
+	bottom: calc(var(--syninsta-frame-width, 16px) * 0.85);
 	left: var(--syninsta-frame-width, 16px);
 	overflow: hidden;
 	color: #151515;
-	font-family: "Segoe Print", "Comic Sans MS", "Comic Sans", "Chalkboard SE",
-		"Bradley Hand", cursive;
-	font-size: clamp(14px, calc(var(--syninsta-frame-width, 16px) * 1.05), 26px);
-	font-weight: 800;
+	font-family: "Comic Sans MS", "Comic Sans", "Segoe Print", "Chalkboard SE",
+		"Marker Felt", "Bradley Hand", cursive;
+	font-size: clamp(18px, calc(var(--syninsta-frame-width, 16px) * 1.45), 34px);
+	font-style: italic;
+	font-weight: 900;
 	letter-spacing: 0;
 	line-height: 1.05;
 	text-align: center;

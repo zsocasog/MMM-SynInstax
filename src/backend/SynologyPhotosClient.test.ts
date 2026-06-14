@@ -400,7 +400,7 @@ describe('SynologyPhotosClient', () => {
       expect(Log.info).toHaveBeenCalledWith(expect.stringContaining('Fetched'));
     });
 
-    test('should map Synology date and address into caption metadata', async () => {
+    test('should map Synology date and city into caption metadata', async () => {
       (axios.get as jest.Mock).mockResolvedValue({
         data: {
           success: true,
@@ -429,9 +429,7 @@ describe('SynologyPhotosClient', () => {
       const result = await client.fetchPhotos();
 
       expect(result[0].captionDate).toBe(1717243200000);
-      expect(result[0].captionLocation).toBe(
-        'Margitsziget, Budapest, Magyarország'
-      );
+      expect(result[0].captionLocation).toBe('Budapest');
     });
 
     test('should return empty array on error', async () => {

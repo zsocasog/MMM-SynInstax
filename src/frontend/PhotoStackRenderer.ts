@@ -180,7 +180,7 @@ export default class PhotoStackRenderer {
     );
     const frame = this.config.frameWidth;
     const chromeW = frame * 2;
-    const chromeH = frame * 3.5;
+    const chromeH = frame * 4.75;
     const theta = (this.config.maxRotation * Math.PI) / 180;
     const cos = Math.cos(theta);
     const sin = Math.sin(theta);
@@ -235,9 +235,9 @@ export default class PhotoStackRenderer {
     const boundsWidth = containerWidth - 2 * offset;
     const boundsHeight = containerHeight - 2 * offset;
     const wFromWidth =
-      (boundsWidth - frame * (2 * cos + 3.5 * sin)) / (cos + sin / aspect);
+      (boundsWidth - frame * (2 * cos + 4.75 * sin)) / (cos + sin / aspect);
     const wFromHeight =
-      (boundsHeight - frame * (2 * sin + 3.5 * cos)) / (sin + cos / aspect);
+      (boundsHeight - frame * (2 * sin + 4.75 * cos)) / (sin + cos / aspect);
     let width = Math.min(wFromWidth, wFromHeight);
 
     if (this.config.photoWidth !== null) {
