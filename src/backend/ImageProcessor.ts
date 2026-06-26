@@ -4,11 +4,12 @@
  * Handles image reading, resizing, and processing
  */
 
-import sharp from 'sharp';
 import fsPromises from 'node:fs/promises';
 import Log from './Logger';
 import type { ModuleConfig } from '../types';
 import type ImageCache from './ImageCache';
+
+type SharpFactory = typeof import('sharp');
 
 interface SynologyClient {
   downloadPhoto: (url: string) => Promise<Buffer | null>;
@@ -39,6 +40,21 @@ class ImageProcessor {
     );
 
     try {
+      let sharp: SharpFactory;
+
+      try {
+        const sharpModule = await import('sharp');
+        sharp = ((sharpModule as unknown as { default?: SharpFactory })
+          .default ?? sharpModule) as SharpFactory;
+      } catch (err) {
+        Log.error(
+          'Image resizing requires optional dependency "sharp". Install it or set resizeImages to false.',
+          err
+        );
+        callback(null);
+        return;
+      }
+
       const buffer = await sharp(inputPath)
         .rotate()
         .resize({
