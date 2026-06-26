@@ -12,9 +12,9 @@ output/
 .eslintcache
 
 # Ignore rollup output
-MMM-SynInsta.js
+MMM-SynInstax.js
 node_helper.js
-SynInsta.css
+SynInstax.css
 .eslintcache
 
 output/*

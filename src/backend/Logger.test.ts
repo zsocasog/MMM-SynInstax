@@ -47,7 +47,7 @@ describe('Logger', () => {
       Logger.info('Test message');
 
       expect(mockMagicMirrorLogger.info).toHaveBeenCalledWith(
-        '[MMM-SynInsta] Test message'
+        '[MMM-SynInstax] Test message'
       );
     });
 
@@ -55,7 +55,7 @@ describe('Logger', () => {
       Logger.info('Test message', 'arg1', 'arg2', 123);
 
       expect(mockMagicMirrorLogger.info).toHaveBeenCalledWith(
-        '[MMM-SynInsta] Test message',
+        '[MMM-SynInstax] Test message',
         'arg1',
         'arg2',
         123
@@ -63,10 +63,10 @@ describe('Logger', () => {
     });
 
     it('should not add prefix if already present', () => {
-      Logger.info('[MMM-SynInsta] Already prefixed');
+      Logger.info('[MMM-SynInstax] Already prefixed');
 
       expect(mockMagicMirrorLogger.info).toHaveBeenCalledWith(
-        '[MMM-SynInsta] Already prefixed'
+        '[MMM-SynInstax] Already prefixed'
       );
     });
 
@@ -74,7 +74,7 @@ describe('Logger', () => {
       Logger.info(123 as unknown as string);
 
       expect(mockMagicMirrorLogger.info).toHaveBeenCalledWith(
-        '[MMM-SynInsta] 123'
+        '[MMM-SynInstax] 123'
       );
     });
 
@@ -83,7 +83,7 @@ describe('Logger', () => {
       Logger.info(obj as unknown as string);
 
       expect(mockMagicMirrorLogger.info).toHaveBeenCalledWith(
-        '[MMM-SynInsta] [object Object]'
+        '[MMM-SynInstax] [object Object]'
       );
     });
   });
@@ -99,7 +99,7 @@ describe('Logger', () => {
       Logger.error('Error message');
 
       expect(mockMagicMirrorLogger.error).toHaveBeenCalledWith(
-        '[MMM-SynInsta] Error message'
+        '[MMM-SynInstax] Error message'
       );
     });
 
@@ -108,16 +108,16 @@ describe('Logger', () => {
       Logger.error('Error occurred', error);
 
       expect(mockMagicMirrorLogger.error).toHaveBeenCalledWith(
-        '[MMM-SynInsta] Error occurred',
+        '[MMM-SynInstax] Error occurred',
         error
       );
     });
 
     it('should not add prefix if already present', () => {
-      Logger.error('[MMM-SynInsta] Already prefixed error');
+      Logger.error('[MMM-SynInstax] Already prefixed error');
 
       expect(mockMagicMirrorLogger.error).toHaveBeenCalledWith(
-        '[MMM-SynInsta] Already prefixed error'
+        '[MMM-SynInstax] Already prefixed error'
       );
     });
   });
@@ -133,7 +133,7 @@ describe('Logger', () => {
       Logger.warn('Warning message');
 
       expect(mockMagicMirrorLogger.warn).toHaveBeenCalledWith(
-        '[MMM-SynInsta] Warning message'
+        '[MMM-SynInstax] Warning message'
       );
     });
 
@@ -141,17 +141,17 @@ describe('Logger', () => {
       Logger.warn('Warning message', 'detail1', 'detail2');
 
       expect(mockMagicMirrorLogger.warn).toHaveBeenCalledWith(
-        '[MMM-SynInsta] Warning message',
+        '[MMM-SynInstax] Warning message',
         'detail1',
         'detail2'
       );
     });
 
     it('should not add prefix if already present', () => {
-      Logger.warn('[MMM-SynInsta] Already prefixed warning');
+      Logger.warn('[MMM-SynInstax] Already prefixed warning');
 
       expect(mockMagicMirrorLogger.warn).toHaveBeenCalledWith(
-        '[MMM-SynInsta] Already prefixed warning'
+        '[MMM-SynInstax] Already prefixed warning'
       );
     });
   });
@@ -167,7 +167,7 @@ describe('Logger', () => {
       Logger.debug('Debug message');
 
       expect(mockMagicMirrorLogger.debug).toHaveBeenCalledWith(
-        '[MMM-SynInsta] Debug message'
+        '[MMM-SynInstax] Debug message'
       );
     });
 
@@ -176,16 +176,16 @@ describe('Logger', () => {
       Logger.debug('Debug message', debugData);
 
       expect(mockMagicMirrorLogger.debug).toHaveBeenCalledWith(
-        '[MMM-SynInsta] Debug message',
+        '[MMM-SynInstax] Debug message',
         debugData
       );
     });
 
     it('should not add prefix if already present', () => {
-      Logger.debug('[MMM-SynInsta] Already prefixed debug');
+      Logger.debug('[MMM-SynInstax] Already prefixed debug');
 
       expect(mockMagicMirrorLogger.debug).toHaveBeenCalledWith(
-        '[MMM-SynInsta] Already prefixed debug'
+        '[MMM-SynInstax] Already prefixed debug'
       );
     });
   });
@@ -201,7 +201,7 @@ describe('Logger', () => {
       Logger.log('Log message');
 
       expect(mockMagicMirrorLogger.log).toHaveBeenCalledWith(
-        '[MMM-SynInsta] Log message'
+        '[MMM-SynInstax] Log message'
       );
     });
 
@@ -209,7 +209,7 @@ describe('Logger', () => {
       Logger.log('Log message', 1, 2, 3);
 
       expect(mockMagicMirrorLogger.log).toHaveBeenCalledWith(
-        '[MMM-SynInsta] Log message',
+        '[MMM-SynInstax] Log message',
         1,
         2,
         3
@@ -217,10 +217,10 @@ describe('Logger', () => {
     });
 
     it('should not add prefix if already present', () => {
-      Logger.log('[MMM-SynInsta] Already prefixed log');
+      Logger.log('[MMM-SynInstax] Already prefixed log');
 
       expect(mockMagicMirrorLogger.log).toHaveBeenCalledWith(
-        '[MMM-SynInsta] Already prefixed log'
+        '[MMM-SynInstax] Already prefixed log'
       );
     });
   });
@@ -249,10 +249,10 @@ describe('Logger', () => {
 
       // Should use console instead
       Logger.info('Test');
-      expect(consoleSpy.info).toHaveBeenCalledWith('[MMM-SynInsta] Test');
+      expect(consoleSpy.info).toHaveBeenCalledWith('[MMM-SynInstax] Test');
 
       Logger.error('Error');
-      expect(consoleSpy.error).toHaveBeenCalledWith('[MMM-SynInsta] Error');
+      expect(consoleSpy.error).toHaveBeenCalledWith('[MMM-SynInstax] Error');
 
       // Restore console
       Object.values(consoleSpy).forEach((spy) => spy.mockRestore());
@@ -268,19 +268,19 @@ describe('Logger', () => {
       Logger.log('Log message');
 
       expect(mockMagicMirrorLogger.info).toHaveBeenCalledWith(
-        '[MMM-SynInsta] Info message'
+        '[MMM-SynInstax] Info message'
       );
       expect(mockMagicMirrorLogger.warn).toHaveBeenCalledWith(
-        '[MMM-SynInsta] Warning message'
+        '[MMM-SynInstax] Warning message'
       );
       expect(mockMagicMirrorLogger.error).toHaveBeenCalledWith(
-        '[MMM-SynInsta] Error message'
+        '[MMM-SynInstax] Error message'
       );
       expect(mockMagicMirrorLogger.debug).toHaveBeenCalledWith(
-        '[MMM-SynInsta] Debug message'
+        '[MMM-SynInstax] Debug message'
       );
       expect(mockMagicMirrorLogger.log).toHaveBeenCalledWith(
-        '[MMM-SynInsta] Log message'
+        '[MMM-SynInstax] Log message'
       );
     });
 
@@ -288,7 +288,7 @@ describe('Logger', () => {
       Logger.info('');
 
       expect(mockMagicMirrorLogger.info).toHaveBeenCalledWith(
-        '[MMM-SynInsta] '
+        '[MMM-SynInstax] '
       );
     });
 
@@ -296,7 +296,7 @@ describe('Logger', () => {
       Logger.info(null as unknown as string);
 
       expect(mockMagicMirrorLogger.info).toHaveBeenCalledWith(
-        '[MMM-SynInsta] null'
+        '[MMM-SynInstax] null'
       );
     });
 
@@ -304,15 +304,15 @@ describe('Logger', () => {
       Logger.info(undefined as unknown as string);
 
       expect(mockMagicMirrorLogger.info).toHaveBeenCalledWith(
-        '[MMM-SynInsta] undefined'
+        '[MMM-SynInstax] undefined'
       );
     });
 
     it('should handle message with prefix in the middle', () => {
-      Logger.info('Message with [MMM-SynInsta] in middle');
+      Logger.info('Message with [MMM-SynInstax] in middle');
 
       expect(mockMagicMirrorLogger.info).toHaveBeenCalledWith(
-        '[MMM-SynInsta] Message with [MMM-SynInsta] in middle'
+        '[MMM-SynInstax] Message with [MMM-SynInstax] in middle'
       );
     });
 
@@ -321,7 +321,7 @@ describe('Logger', () => {
       Logger.info(longMessage);
 
       expect(mockMagicMirrorLogger.info).toHaveBeenCalledWith(
-        `[MMM-SynInsta] ${longMessage}`
+        `[MMM-SynInstax] ${longMessage}`
       );
     });
 
@@ -329,7 +329,7 @@ describe('Logger', () => {
       Logger.info('Message with\nnewline\tand\ttabs');
 
       expect(mockMagicMirrorLogger.info).toHaveBeenCalledWith(
-        '[MMM-SynInsta] Message with\nnewline\tand\ttabs'
+        '[MMM-SynInstax] Message with\nnewline\tand\ttabs'
       );
     });
 
@@ -337,7 +337,7 @@ describe('Logger', () => {
       Logger.info('Message with émojis 🎉 and spëcial çhars');
 
       expect(mockMagicMirrorLogger.info).toHaveBeenCalledWith(
-        '[MMM-SynInsta] Message with émojis 🎉 and spëcial çhars'
+        '[MMM-SynInstax] Message with émojis 🎉 and spëcial çhars'
       );
     });
   });

@@ -4,11 +4,13 @@
  * Instax/Polaroid-style card stack renderer for Synology photo URLs.
  */
 
-import type { ModuleConfig, PhotoCaptionMetadata } from '../types';
+import type { ModuleConfig } from '../types';
 
 interface StackCard {
   element: HTMLDivElement;
 }
+
+type StackMediaElement = HTMLImageElement | HTMLVideoElement;
 
 export default class PhotoStackRenderer {
   private readonly config: ModuleConfig;
@@ -21,29 +23,29 @@ export default class PhotoStackRenderer {
 
   createContainer(): HTMLDivElement {
     const container = document.createElement('div');
-    container.className = 'syninsta-stack-container';
+    container.className = 'syninstax-stack-container';
 
     const box = this.computePhotoBox();
-    container.style.setProperty('--syninsta-photo-width', `${box.width}px`);
-    container.style.setProperty('--syninsta-photo-height', `${box.height}px`);
+    container.style.setProperty('--syninstax-photo-width', `${box.width}px`);
+    container.style.setProperty('--syninstax-photo-height', `${box.height}px`);
     container.style.setProperty(
-      '--syninsta-frame-width',
+      '--syninstax-frame-width',
       `${this.config.frameWidth}px`
     );
     container.style.setProperty(
-      '--syninsta-frame-color',
+      '--syninstax-frame-color',
       this.config.frameColor
     );
     container.style.setProperty(
-      '--syninsta-background-color',
+      '--syninstax-background-color',
       this.config.stackBackgroundColor
     );
     container.style.setProperty(
-      '--syninsta-fly-in-duration',
+      '--syninstax-fly-in-duration',
       `${this.config.flyInDuration}ms`
     );
     container.style.setProperty(
-      '--syninsta-fly-out-duration',
+      '--syninstax-fly-out-duration',
       `${this.config.flyOutDuration}ms`
     );
 
@@ -52,6 +54,54 @@ export default class PhotoStackRenderer {
   }
 
   addCard(container: HTMLElement, image: HTMLImageElement): HTMLDivElement {
+    const img = document.createElement('img');
+    img.className = 'syninstax-media syninstax-image';
+    img.alt = '';
+    img.src = image.src;
+    this.sizeMedia(img, this.getMediaAspect(image));
+    return this.addMediaCard(container, img);
+  }
+
+  addVideoCard(
+    container: HTMLElement,
+    videoUrl: string,
+    mimeType = 'video/mp4'
+  ): HTMLDivElement {
+    const video = document.createElement('video');
+    video.className = 'syninstax-media syninstax-video';
+    video.autoplay = true;
+    video.loop = true;
+    video.muted = true;
+    video.playsInline = true;
+    video.preload = 'auto';
+
+    const source = document.createElement('source');
+    source.src = videoUrl;
+    source.type = mimeType;
+    video.appendChild(source);
+
+    this.sizeMedia(video, window.innerWidth / window.innerHeight);
+    video.addEventListener('loadedmetadata', () => {
+      this.sizeMedia(video, this.getMediaAspect(video));
+      void video.play();
+    });
+
+    return this.addMediaCard(container, video);
+  }
+
+  settleInFlightCards(container: HTMLElement): void {
+    const flying = container.querySelectorAll(
+      '.syninstax-card.syninstax-fly-in'
+    );
+    for (const element of Array.from(flying)) {
+      element.classList.remove('syninstax-fly-in');
+    }
+  }
+
+  private addMediaCard(
+    container: HTMLElement,
+    media: StackMediaElement
+  ): HTMLDivElement {
     const entries = [
       { x: '120vw', y: '-60vh' },
       { x: '-120vw', y: '-60vh' },
@@ -61,41 +111,29 @@ export default class PhotoStackRenderer {
     const entry = entries[Math.floor(Math.random() * entries.length)];
 
     const card = document.createElement('div');
-    const animateCard =
-      this.config.animateInitialStack ||
-      this.cards.length >= this.config.stackSize;
-    card.className = animateCard
-      ? 'syninsta-card syninsta-fly-in'
-      : 'syninsta-card';
+    card.className = 'syninstax-card syninstax-fly-in';
     card.style.setProperty(
-      '--syninsta-rest-x',
+      '--syninstax-rest-x',
       `${this.randomBetween(-this.config.maxOffset, this.config.maxOffset).toFixed(2)}px`
     );
     card.style.setProperty(
-      '--syninsta-rest-y',
+      '--syninstax-rest-y',
       `${this.randomBetween(-this.config.maxOffset, this.config.maxOffset).toFixed(2)}px`
     );
     card.style.setProperty(
-      '--syninsta-rest-rotate',
+      '--syninstax-rest-rotate',
       `${this.randomBetween(-this.config.maxRotation, this.config.maxRotation).toFixed(2)}deg`
     );
-    card.style.setProperty('--syninsta-in-x', entry.x);
-    card.style.setProperty('--syninsta-in-y', entry.y);
-
-    const img = document.createElement('img');
-    img.className = 'syninsta-image';
-    img.alt = '';
-    img.src = image.src;
-    this.sizeImage(img, image);
-    card.appendChild(img);
-
-    if (this.config.showPhotoCaption) {
-      const caption = document.createElement('div');
-      caption.className = 'syninsta-caption';
-      card.appendChild(caption);
-    }
+    card.style.setProperty('--syninstax-in-x', entry.x);
+    card.style.setProperty('--syninstax-in-y', entry.y);
+    card.appendChild(media);
 
     for (const existing of this.cards) {
+      for (const video of Array.from(
+        existing.element.querySelectorAll('video')
+      )) {
+        video.pause();
+      }
       const z = parseInt(existing.element.style.zIndex, 10) || 0;
       existing.element.style.zIndex = String(z - 1);
     }
@@ -104,15 +142,13 @@ export default class PhotoStackRenderer {
     container.appendChild(card);
     this.cards.push({ element: card });
 
-    if (animateCard) {
-      const settle = (): void => card.classList.remove('syninsta-fly-in');
-      card.addEventListener('animationend', (event) => {
-        if (event.animationName === 'syninsta-fly-in') {
-          settle();
-        }
-      });
-      window.setTimeout(settle, this.config.flyInDuration + 50);
-    }
+    const settle = (): void => card.classList.remove('syninstax-fly-in');
+    card.addEventListener('animationend', (event) => {
+      if (event.animationName === 'syninstax-fly-in') {
+        settle();
+      }
+    });
+    window.setTimeout(settle, this.config.flyInDuration + 50);
 
     while (this.cards.length > this.config.stackSize) {
       const oldest = this.cards.shift();
@@ -122,34 +158,6 @@ export default class PhotoStackRenderer {
     }
 
     return card;
-  }
-
-  updateCaption(
-    card: HTMLElement,
-    metadata: PhotoCaptionMetadata | null
-  ): void {
-    if (!this.config.showPhotoCaption || !metadata) {
-      return;
-    }
-
-    const caption = card.querySelector('.syninsta-caption');
-    if (!caption) {
-      return;
-    }
-
-    const parts = [
-      this.config.showPhotoCaptionLocation ? metadata.location : null,
-      this.config.showPhotoCaptionDate ? metadata.date : null
-    ].filter(Boolean);
-
-    caption.textContent = parts.join(' - ');
-  }
-
-  settleInFlightCards(container: HTMLElement): void {
-    const flying = container.querySelectorAll('.syninsta-card.syninsta-fly-in');
-    for (const element of Array.from(flying)) {
-      element.classList.remove('syninsta-fly-in');
-    }
   }
 
   private applyPosition(container: HTMLElement): void {
@@ -180,7 +188,7 @@ export default class PhotoStackRenderer {
     );
     const frame = this.config.frameWidth;
     const chromeW = frame * 2;
-    const chromeH = frame * 4.75;
+    const chromeH = frame * 3.5;
     const theta = (this.config.maxRotation * Math.PI) / 180;
     const cos = Math.cos(theta);
     const sin = Math.sin(theta);
@@ -202,17 +210,22 @@ export default class PhotoStackRenderer {
     return { width, height };
   }
 
-  private sizeImage(
-    img: HTMLImageElement,
-    loadedImage: HTMLImageElement
-  ): void {
-    const aspect =
-      loadedImage.naturalWidth && loadedImage.naturalHeight
-        ? loadedImage.naturalWidth / loadedImage.naturalHeight
-        : window.innerWidth / window.innerHeight;
+  private sizeMedia(media: StackMediaElement, aspect: number): void {
     const box = this.fitPhotoToContainer(aspect);
-    img.style.maxWidth = `${box.width}px`;
-    img.style.maxHeight = `${box.height}px`;
+    media.style.maxWidth = `${box.width}px`;
+    media.style.maxHeight = `${box.height}px`;
+  }
+
+  private getMediaAspect(media: StackMediaElement): number {
+    if (media instanceof HTMLVideoElement) {
+      return media.videoWidth && media.videoHeight
+        ? media.videoWidth / media.videoHeight
+        : window.innerWidth / window.innerHeight;
+    }
+
+    return media.naturalWidth && media.naturalHeight
+      ? media.naturalWidth / media.naturalHeight
+      : window.innerWidth / window.innerHeight;
   }
 
   private fitPhotoToContainer(aspect: number): {
@@ -235,9 +248,9 @@ export default class PhotoStackRenderer {
     const boundsWidth = containerWidth - 2 * offset;
     const boundsHeight = containerHeight - 2 * offset;
     const wFromWidth =
-      (boundsWidth - frame * (2 * cos + 4.75 * sin)) / (cos + sin / aspect);
+      (boundsWidth - frame * (2 * cos + 3.5 * sin)) / (cos + sin / aspect);
     const wFromHeight =
-      (boundsHeight - frame * (2 * sin + 4.75 * cos)) / (sin + cos / aspect);
+      (boundsHeight - frame * (2 * sin + 3.5 * cos)) / (sin + cos / aspect);
     let width = Math.min(wFromWidth, wFromHeight);
 
     if (this.config.photoWidth !== null) {
@@ -248,12 +261,11 @@ export default class PhotoStackRenderer {
     }
 
     width = Math.max(1, Math.floor(width));
-    const height = Math.max(1, Math.floor(width / aspect));
-    return { width, height };
+    return { width, height: Math.max(1, Math.floor(width / aspect)) };
   }
 
   private removeOldestCard(element: HTMLDivElement): void {
-    element.classList.add('syninsta-fly-out');
+    element.classList.add('syninstax-fly-out');
     window.setTimeout(() => {
       element.parentNode?.removeChild(element);
     }, this.config.flyOutDuration);

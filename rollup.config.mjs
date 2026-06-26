@@ -5,17 +5,17 @@ import typescript from '@rollup/plugin-typescript';
 
 export default [
     {
-        input: './src/MMM-SynInsta.ts',
+        input: './src/MMM-SynInstax.ts',
         plugins: [
             typescript(),
             resolve(),
             commonjs(),
             scss({
-                fileName: 'SynInsta.css'
+                fileName: 'SynInstax.css'
             })
         ],
         output: {
-            file: './MMM-SynInsta.js',
+            file: './MMM-SynInstax.js',
             format: 'iife',
         },
     }, {

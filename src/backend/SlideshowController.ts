@@ -84,7 +84,7 @@ export default class SlideshowController {
     // Start slideshow after a short delay
     setTimeout(() => {
       void this.gatherImageList(config, true).then(() => {
-        void this.displayInitialImages(config);
+        void this.getNextImage();
       });
 
       const refreshInterval =
@@ -93,15 +93,6 @@ export default class SlideshowController {
         void this.refreshImageList();
       }, refreshInterval);
     }, 200);
-  }
-
-  private async displayInitialImages(config: ModuleConfig): Promise<void> {
-    const imageCount =
-      config.displayMode === 'instax' ? Math.max(1, config.stackSize) : 1;
-
-    for (let index = 0; index < imageCount; index += 1) {
-      await this.displayNextImage(index === imageCount - 1);
-    }
   }
 
   /**
@@ -150,10 +141,6 @@ export default class SlideshowController {
    * Get and display the next image in the slideshow
    */
   async getNextImage(): Promise<void> {
-    await this.displayNextImage(true);
-  }
-
-  private async displayNextImage(scheduleNextImage: boolean): Promise<void> {
     Log.debug('Getting next image...');
 
     if (!this.imageListManager || this.imageListManager.isEmpty()) {
@@ -198,35 +185,41 @@ export default class SlideshowController {
 
     const imageUrl = image.url || null;
     const synologyClient = this.synologyManager.getClient();
+    const sendDisplayNotification = (data: string): void => {
+      const returnPayload: ImageInfo = {
+        identifier: this.config?.identifier || '',
+        path: image.path,
+        data,
+        mediaUrl: image.mediaUrl,
+        mediaType: image.mediaType,
+        mimeType: image.mimeType,
+        index: this.imageListManager.index,
+        total: this.imageListManager.getList().length
+      };
+      Log.debug(`Sending DISPLAY_IMAGE notification for "${image.path}"`);
+      this.notificationCallback(
+        'BACKGROUNDSLIDESHOW_DISPLAY_IMAGE',
+        returnPayload
+      );
+    };
 
-    this.imageProcessor?.readFile(
-      image.path,
-      (data) => {
-        const returnPayload: ImageInfo = {
-          identifier: this.config?.identifier || '',
-          path: image.path,
-          data: data || '',
-          index: this.imageListManager.index,
-          total: this.imageListManager.getList().length,
-          captionDate: image.captionDate,
-          captionLocation: image.captionLocation
-        };
-        Log.debug(`Sending DISPLAY_IMAGE notification for "${image.path}"`);
-        this.notificationCallback(
-          'BACKGROUNDSLIDESHOW_DISPLAY_IMAGE',
-          returnPayload
-        );
-      },
-      imageUrl,
-      synologyClient
-    );
-
-    if (scheduleNextImage) {
-      const slideshowSpeed = this.config?.slideshowSpeed || 10000;
-      this.timerManager.startSlideshowTimer(() => {
-        void this.getNextImage();
-      }, slideshowSpeed);
+    if (image.mediaType === 'video' || image.mimeType === 'image/gif') {
+      sendDisplayNotification(image.mediaUrl || image.url || image.path);
+    } else {
+      this.imageProcessor?.readFile(
+        image.path,
+        (data) => {
+          sendDisplayNotification(data || '');
+        },
+        imageUrl,
+        synologyClient
+      );
     }
+
+    const slideshowSpeed = this.config?.slideshowSpeed || 10000;
+    this.timerManager.startSlideshowTimer(() => {
+      void this.getNextImage();
+    }, slideshowSpeed);
 
     if (this.config?.showAllImagesBeforeRestart) {
       this.imageListManager.addImageToShown(image.path);

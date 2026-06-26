@@ -1,11 +1,11 @@
 /**
  * ModuleController.ts
  *
- * Main controller for the MMM-SynInsta frontend module.
+ * Main controller for the MMM-SynInstax frontend module.
  * Handles module lifecycle, notifications, and UI updates.
  */
 
-import type { ImageInfo, ModuleConfig, PhotoCaptionMetadata } from '../types';
+import type { ImageInfo, ModuleConfig } from '../types';
 import ConfigValidator from './ConfigValidator';
 import ImageHandler from './ImageHandler';
 import UIBuilder from './UIBuilder';
@@ -27,10 +27,7 @@ type MomentInterface = (
 
 interface EXIFInterface {
   getData: (image: HTMLImageElement, callback: () => void) => void;
-  getTag: (
-    image: HTMLImageElement,
-    tag: string
-  ) => string | number | number[] | null;
+  getTag: (image: HTMLImageElement, tag: string) => string | number | null;
 }
 
 interface NotificationCallbacks {
@@ -193,7 +190,7 @@ export default class ModuleController {
    */
   socketNotificationReceived(notification: string, payload: unknown): void {
     this.Log.log(
-      '[MMM-SynInsta] Frontend received notification:',
+      '[MMM-SynInstax] Frontend received notification:',
       notification,
       payload
     );
@@ -225,7 +222,7 @@ export default class ModuleController {
   private handleReady(payload: unknown): void {
     const typedPayload = payload as { identifier: string };
     this.Log.log(
-      '[MMM-SynInsta] READY notification, identifier match:',
+      '[MMM-SynInstax] READY notification, identifier match:',
       typedPayload.identifier === this.identifier
     );
     if (typedPayload.identifier === this.identifier && !this.playingVideo) {
@@ -237,7 +234,7 @@ export default class ModuleController {
    * Handle REGISTER_CONFIG notification
    */
   private handleRegisterConfig(): void {
-    this.Log.log('[MMM-SynInsta] Registering config');
+    this.Log.log('[MMM-SynInstax] Registering config');
     this.updateImageList();
   }
 
@@ -245,7 +242,7 @@ export default class ModuleController {
    * Handle PLAY notification
    */
   private handlePlay(): void {
-    this.Log.log('[MMM-SynInsta] PLAY notification');
+    this.Log.log('[MMM-SynInstax] PLAY notification');
     this.updateImage();
     this.callbacks.sendSocketNotification('BACKGROUNDSLIDESHOW_PLAY');
     if (!this.playingVideo) {
@@ -259,7 +256,7 @@ export default class ModuleController {
   private handleDisplayImage(payload: unknown): void {
     const typedPayload = payload as ImageInfo;
     this.Log.log(
-      '[MMM-SynInsta] DISPLAY_IMAGE notification, identifier match:',
+      '[MMM-SynInstax] DISPLAY_IMAGE notification, identifier match:',
       typedPayload.identifier === this.identifier
     );
     if (typedPayload.identifier === this.identifier) {
@@ -287,7 +284,7 @@ export default class ModuleController {
    * Handle IMAGE_UPDATE notification
    */
   private handleImageUpdate(): void {
-    this.Log.log('[MMM-SynInsta] Changing Background');
+    this.Log.log('[MMM-SynInstax] Changing Background');
     this.suspend();
     this.updateImage();
     if (!this.playingVideo) {
@@ -344,7 +341,7 @@ export default class ModuleController {
    */
   private handleUrls(payload: unknown): void {
     this.Log.log(
-      `[MMM-SynInsta] Notification Received: BACKGROUNDSLIDESHOW_URLS. Payload: ${JSON.stringify(payload)}`
+      `[MMM-SynInstax] Notification Received: BACKGROUNDSLIDESHOW_URLS. Payload: ${JSON.stringify(payload)}`
     );
     const typedPayload = payload as { urls?: string[] };
 
@@ -390,25 +387,27 @@ export default class ModuleController {
    */
   displayImage(imageinfo: ImageInfo): void {
     this.Log.info(
-      `[MMM-SynInsta] Frontend displayImage called for: ${imageinfo.path}`
+      `[MMM-SynInstax] Frontend displayImage called for: ${imageinfo.path}`
     );
-    this.Log.log('[MMM-SynInsta] Frontend displayImage called', imageinfo);
+    this.Log.log('[MMM-SynInstax] Frontend displayImage called', imageinfo);
 
-    const mwLc = imageinfo.path.toLowerCase();
-    if (mwLc.endsWith('.mp4') || mwLc.endsWith('.m4v')) {
-      const payload = [imageinfo.path, 'PLAY'];
-      imageinfo.data = 'modules/MMM-SynInsta/transparent1080p.png';
-      this.callbacks.sendSocketNotification(
-        'BACKGROUNDSLIDESHOW_PLAY_VIDEO',
-        payload
-      );
+    if (this.isVideoMedia(imageinfo)) {
       this.playingVideo = true;
-      this.suspend();
-    } else {
-      this.playingVideo = false;
+      this.displayVideo(imageinfo);
+      this.callbacks.sendSocketNotification(
+        'BACKGROUNDSLIDESHOW_IMAGE_UPDATED',
+        {
+          url: imageinfo.path
+        }
+      );
+      return;
     }
 
-    this.Log.log('[MMM-SynInsta] Creating image element, src:', imageinfo.data);
+    this.playingVideo = false;
+    this.Log.log(
+      '[MMM-SynInstax] Creating image element, src:',
+      imageinfo.data
+    );
     const image = new Image();
     image.onload = () => {
       this.handleImageLoad(image, imageinfo);
@@ -416,18 +415,73 @@ export default class ModuleController {
 
     image.onerror = (error) => {
       this.Log.error(
-        '[MMM-SynInsta] Image failed to load:',
+        '[MMM-SynInstax] Image failed to load:',
         imageinfo.data,
         error
       );
-      this.Log.error(`[MMM-SynInsta] Image failed to load: ${imageinfo.data}`);
+      this.Log.error(`[MMM-SynInstax] Image failed to load: ${imageinfo.data}`);
     };
 
     image.src = imageinfo.data;
-    this.Log.log('[MMM-SynInsta] Image src set to:', imageinfo.data);
+    this.Log.log('[MMM-SynInstax] Image src set to:', imageinfo.data);
     this.callbacks.sendSocketNotification('BACKGROUNDSLIDESHOW_IMAGE_UPDATED', {
       url: imageinfo.path
     });
+  }
+
+  private isVideoMedia(imageinfo: ImageInfo): boolean {
+    const path = imageinfo.path.toLowerCase();
+    return (
+      imageinfo.mediaType === 'video' ||
+      ['.mp4', '.m4v', '.mov', '.webm'].some((ext) => path.endsWith(ext))
+    );
+  }
+
+  private displayVideo(imageinfo: ImageInfo): void {
+    const videoUrl = imageinfo.mediaUrl || imageinfo.data || imageinfo.path;
+
+    if (this.config.displayMode === 'instax') {
+      this.photoStackRenderer?.addVideoCard(
+        this.imagesDiv!,
+        videoUrl,
+        imageinfo.mimeType || 'video/mp4'
+      );
+
+      if (this.config.showProgressBar) {
+        this.uiBuilder?.restartProgressBar();
+      }
+      return;
+    }
+
+    if (this.imagesDiv && this.transitionHandler) {
+      this.transitionHandler.cleanupOldImages(this.imagesDiv);
+    }
+
+    const transitionDiv = this.transitionHandler?.createTransitionDiv();
+    if (!transitionDiv) return;
+
+    const video = document.createElement('video');
+    video.className = 'image';
+    video.autoplay = true;
+    video.loop = true;
+    video.muted = true;
+    video.playsInline = true;
+    video.preload = 'auto';
+    video.style.objectFit = this.config.backgroundSize;
+    video.style.objectPosition = this.config.backgroundPosition;
+    video.style.width = '100%';
+    video.style.height = '100%';
+
+    const source = document.createElement('source');
+    source.src = videoUrl;
+    source.type = imageinfo.mimeType || 'video/mp4';
+    video.appendChild(source);
+    video.addEventListener('loadedmetadata', () => {
+      void video.play();
+    });
+
+    transitionDiv.appendChild(video);
+    this.imagesDiv?.appendChild(transitionDiv);
   }
 
   /**
@@ -435,31 +489,21 @@ export default class ModuleController {
    */
   private handleImageLoad(image: HTMLImageElement, imageinfo: ImageInfo): void {
     this.Log.log(
-      '[MMM-SynInsta] Image loaded successfully',
+      '[MMM-SynInstax] Image loaded successfully',
       image.width,
       'x',
       image.height
     );
 
     if (this.config.displayMode === 'instax') {
-      const card = this.photoStackRenderer?.addCard(this.imagesDiv!, image);
-      if (card) {
-        this.photoStackRenderer?.updateCaption(
-          card,
-          this.getPhotoCaptionMetadata(image, imageinfo, null)
-        );
-      }
+      this.photoStackRenderer?.addCard(this.imagesDiv!, image);
 
       if (this.config.showProgressBar) {
         this.uiBuilder?.restartProgressBar();
       }
 
       setTimeout(() => {
-        this.handleEXIFData(image, imageinfo, (metadata) => {
-          if (card) {
-            this.photoStackRenderer?.updateCaption(card, metadata);
-          }
-        });
+        this.handleEXIFData(image, imageinfo);
       }, 0);
       return;
     }
@@ -478,22 +522,22 @@ export default class ModuleController {
     if (!imageDiv) return;
 
     imageDiv.style.backgroundImage = `url("${image.src}")`;
-    this.Log.log('[MMM-SynInsta] Set backgroundImage on imageDiv');
+    this.Log.log('[MMM-SynInstax] Set backgroundImage on imageDiv');
     this.Log.log(
-      '[MMM-SynInsta] imageDiv classList:',
+      '[MMM-SynInstax] imageDiv classList:',
       imageDiv.classList.toString()
     );
     this.Log.log(
-      '[MMM-SynInsta] imageDiv backgroundSize:',
+      '[MMM-SynInstax] imageDiv backgroundSize:',
       imageDiv.style.backgroundSize
     );
 
     // Apply fit mode (portrait/landscape)
     const useFitMode =
       this.imageHandler?.applyFitMode(imageDiv, image) || false;
-    this.Log.log('[MMM-SynInsta] useFitMode:', useFitMode);
+    this.Log.log('[MMM-SynInstax] useFitMode:', useFitMode);
     this.Log.log(
-      '[MMM-SynInsta] After fitMode, classList:',
+      '[MMM-SynInstax] After fitMode, classList:',
       imageDiv.classList.toString()
     );
 
@@ -515,12 +559,12 @@ export default class ModuleController {
 
     transitionDiv.appendChild(imageDiv);
     this.imagesDiv?.appendChild(transitionDiv);
-    this.Log.log('[MMM-SynInsta] Image appended to DOM');
+    this.Log.log('[MMM-SynInstax] Image appended to DOM');
     this.Log.log(
-      '[MMM-SynInsta] imagesDiv children count:',
+      '[MMM-SynInstax] imagesDiv children count:',
       this.imagesDiv?.children.length
     );
-    this.Log.log('[MMM-SynInsta] imagesDiv styles:', {
+    this.Log.log('[MMM-SynInstax] imagesDiv styles:', {
       position: this.imagesDiv?.style.position,
       width: this.imagesDiv?.style.width,
       height: this.imagesDiv?.style.height,
@@ -531,11 +575,11 @@ export default class ModuleController {
     const wrapper = this.imagesDiv?.parentElement;
     if (wrapper) {
       this.Log.log(
-        '[MMM-SynInsta] Wrapper children count:',
+        '[MMM-SynInstax] Wrapper children count:',
         wrapper.children.length
       );
       this.Log.log(
-        '[MMM-SynInsta] Wrapper children types:',
+        '[MMM-SynInstax] Wrapper children types:',
         Array.from(wrapper.children).map((c) => c.className)
       );
     }
@@ -544,18 +588,11 @@ export default class ModuleController {
   /**
    * Handle EXIF data extraction and image info update
    */
-  private handleEXIFData(
-    image: HTMLImageElement,
-    imageinfo: ImageInfo,
-    onMetadata?: (metadata: PhotoCaptionMetadata) => void
-  ): void {
+  private handleEXIFData(image: HTMLImageElement, imageinfo: ImageInfo): void {
     this.EXIF.getData(image, () => {
-      const rawDateTime = this.EXIF.getTag(image, 'DateTimeOriginal');
-      onMetadata?.(this.getPhotoCaptionMetadata(image, imageinfo, rawDateTime));
-
       // Update image info if enabled
       if (this.config.showImageInfo && this.imageInfoDiv) {
-        let dateTime = rawDateTime;
+        let dateTime = this.EXIF.getTag(image, 'DateTimeOriginal');
         if (dateTime !== null) {
           try {
             const dateMoment = this.moment(
@@ -565,7 +602,7 @@ export default class ModuleController {
             dateTime = dateMoment.format('dddd MMMM D, YYYY HH:mm');
           } catch {
             this.Log.log(
-              `[MMM-SynInsta] Failed to parse dateTime: ${dateTime} to format YYYY:MM:DD HH:mm:ss`
+              `[MMM-SynInstax] Failed to parse dateTime: ${dateTime} to format YYYY:MM:DD HH:mm:ss`
             );
             dateTime = '';
           }
@@ -573,124 +610,6 @@ export default class ModuleController {
         this.updateImageInfo(imageinfo, String(dateTime || ''));
       }
     });
-  }
-
-  private getPhotoCaptionMetadata(
-    image: HTMLImageElement,
-    imageinfo: ImageInfo,
-    rawDateTime: string | number | number[] | null
-  ): PhotoCaptionMetadata {
-    return {
-      date:
-        this.formatExifDate(rawDateTime, this.config.photoCaptionDateFormat) ||
-        this.formatTimestampDate(
-          imageinfo.captionDate,
-          this.config.photoCaptionDateFormat
-        ),
-      location: imageinfo.captionLocation || this.getExifLocation(image)
-    };
-  }
-
-  private formatExifDate(
-    rawDateTime: string | number | number[] | null,
-    format: string
-  ): string | undefined {
-    if (rawDateTime === null || Array.isArray(rawDateTime)) {
-      return undefined;
-    }
-
-    try {
-      const dateMoment = this.moment(
-        String(rawDateTime),
-        'YYYY:MM:DD HH:mm:ss'
-      );
-      const formatted = dateMoment.format(format);
-      return formatted === 'Invalid date' ? undefined : formatted;
-    } catch {
-      return undefined;
-    }
-  }
-
-  private formatTimestampDate(
-    timestamp: number | undefined,
-    format: string
-  ): string | undefined {
-    if (!Number.isFinite(timestamp)) {
-      return undefined;
-    }
-
-    try {
-      const formatted = this.moment(String(timestamp), 'x').format(format);
-      return formatted === 'Invalid date' ? undefined : formatted;
-    } catch {
-      return undefined;
-    }
-  }
-
-  private getExifLocation(image: HTMLImageElement): string | undefined {
-    const textLocation = this.getFirstExifStringTag(image, [
-      'GPSAreaInformation',
-      'Location',
-      'City',
-      'State',
-      'Country'
-    ]);
-    if (textLocation) {
-      return textLocation;
-    }
-
-    const latitude = this.getGpsCoordinate(
-      this.EXIF.getTag(image, 'GPSLatitude'),
-      this.EXIF.getTag(image, 'GPSLatitudeRef')
-    );
-    const longitude = this.getGpsCoordinate(
-      this.EXIF.getTag(image, 'GPSLongitude'),
-      this.EXIF.getTag(image, 'GPSLongitudeRef')
-    );
-
-    if (latitude === null || longitude === null) {
-      return undefined;
-    }
-
-    return `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`;
-  }
-
-  private getFirstExifStringTag(
-    image: HTMLImageElement,
-    tags: string[]
-  ): string | undefined {
-    for (const tag of tags) {
-      const value = this.EXIF.getTag(image, tag);
-      if (typeof value === 'string' && value.trim()) {
-        return value.trim();
-      }
-    }
-
-    return undefined;
-  }
-
-  private getGpsCoordinate(
-    coordinate: string | number | number[] | null,
-    ref: string | number | number[] | null
-  ): number | null {
-    if (!Array.isArray(coordinate) || coordinate.length < 3) {
-      return null;
-    }
-
-    const degrees = Number(coordinate[0]);
-    const minutes = Number(coordinate[1]);
-    const seconds = Number(coordinate[2]);
-
-    if (![degrees, minutes, seconds].every(Number.isFinite)) {
-      return null;
-    }
-
-    let decimal = degrees + minutes / 60 + seconds / 3600;
-    if (typeof ref === 'string' && ['S', 'W'].includes(ref.toUpperCase())) {
-      decimal *= -1;
-    }
-
-    return decimal;
   }
 
   /**
@@ -767,7 +686,7 @@ export default class ModuleController {
    * Suspend the slideshow timer
    */
   suspend(): void {
-    this.Log.log('[MMM-SynInsta] Frontend suspend called');
+    this.Log.log('[MMM-SynInstax] Frontend suspend called');
     if (this.timer) {
       clearTimeout(this.timer);
       this.timer = null;
@@ -781,7 +700,7 @@ export default class ModuleController {
    * Resume the slideshow timer
    */
   resume(): void {
-    this.Log.log('[MMM-SynInsta] Frontend resume called');
+    this.Log.log('[MMM-SynInstax] Frontend resume called');
     this.suspend();
 
     if (this.config.changeImageOnResume) {
@@ -801,9 +720,9 @@ export default class ModuleController {
    * Request image list update from backend
    */
   updateImageList(): void {
-    this.Log.log('[MMM-SynInsta] Frontend updateImageList called');
+    this.Log.log('[MMM-SynInstax] Frontend updateImageList called');
     this.suspend();
-    this.Log.debug('[MMM-SynInsta] Getting images');
+    this.Log.debug('[MMM-SynInstax] Getting images');
     this.callbacks.sendSocketNotification(
       'BACKGROUNDSLIDESHOW_REGISTER_CONFIG',
       this.config

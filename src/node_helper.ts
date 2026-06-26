@@ -2,12 +2,12 @@
  * node_helper.ts
  *
  * MagicMirror²
- * Module: MMM-SynInsta
+ * Module: MMM-SynInstax
  *
  * MagicMirror² By Michael Teeuw https://michaelteeuw.nl
  * MIT Licensed.
  *
- * Module MMM-SynInsta By Spydersoft Consulting
+ * Module MMM-SynInstax By Spydersoft Consulting
  * MIT Licensed.
  */
 
@@ -41,7 +41,7 @@ const helperModule: Partial<HelperModule> = {
    * Called when the module is loaded
    */
   start(this: HelperModule): void {
-    Log.info('MMM-SynInsta helper started');
+    Log.info('MMM-SynInstax helper started');
 
     // Initialize controller with notification callback
     this.controller = new SlideshowController(

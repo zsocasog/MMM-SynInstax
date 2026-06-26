@@ -145,7 +145,7 @@ class UIBuilder {
 
       default:
         Log.warn(
-          `[MMM-SynInsta] ${prop} is not a valid value for imageInfo. Please check your configuration`
+          `[MMM-SynInstax] ${prop} is not a valid value for imageInfo. Please check your configuration`
         );
         return null;
     }

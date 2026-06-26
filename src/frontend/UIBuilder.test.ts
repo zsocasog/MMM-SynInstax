@@ -541,7 +541,7 @@ describe('UIBuilder', () => {
       builder.updateImageInfo(imageInfoDiv, imageInfo, '2025-11-09', translate);
 
       expect(Log.warn).toHaveBeenCalledWith(
-        '[MMM-SynInsta] invalid is not a valid value for imageInfo. Please check your configuration'
+        '[MMM-SynInstax] invalid is not a valid value for imageInfo. Please check your configuration'
       );
     });
 

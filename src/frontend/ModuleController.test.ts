@@ -387,7 +387,7 @@ describe('ModuleController', () => {
       );
 
       expect(mockLog.log).toHaveBeenCalledWith(
-        '[MMM-SynInsta] READY notification, identifier match:',
+        '[MMM-SynInstax] READY notification, identifier match:',
         true
       );
     });
@@ -420,7 +420,7 @@ describe('ModuleController', () => {
       );
 
       expect(mockLog.log).toHaveBeenCalledWith(
-        '[MMM-SynInsta] Registering config'
+        '[MMM-SynInstax] Registering config'
       );
     });
 
@@ -439,7 +439,7 @@ describe('ModuleController', () => {
       );
 
       expect(mockLog.info).toHaveBeenCalledWith(
-        '[MMM-SynInsta] Frontend displayImage called for: test.jpg'
+        '[MMM-SynInstax] Frontend displayImage called for: test.jpg'
       );
     });
 
@@ -522,8 +522,8 @@ describe('ModuleController', () => {
       controller.displayImage(imageInfo);
 
       expect(mockCallbacks.sendSocketNotification).toHaveBeenCalledWith(
-        'BACKGROUNDSLIDESHOW_PLAY_VIDEO',
-        expect.arrayContaining(['test.mp4', 'PLAY'])
+        'BACKGROUNDSLIDESHOW_IMAGE_UPDATED',
+        { url: 'test.mp4' }
       );
     });
 
@@ -539,8 +539,8 @@ describe('ModuleController', () => {
       controller.displayImage(imageInfo);
 
       expect(mockCallbacks.sendSocketNotification).toHaveBeenCalledWith(
-        'BACKGROUNDSLIDESHOW_PLAY_VIDEO',
-        expect.arrayContaining(['test.m4v', 'PLAY'])
+        'BACKGROUNDSLIDESHOW_IMAGE_UPDATED',
+        { url: 'test.m4v' }
       );
     });
 
@@ -556,7 +556,7 @@ describe('ModuleController', () => {
       controller.displayImage(imageInfo);
 
       expect(mockLog.log).toHaveBeenCalledWith(
-        '[MMM-SynInsta] Creating image element, src:',
+        '[MMM-SynInstax] Creating image element, src:',
         'data:image/jpeg;base64,test'
       );
     });
@@ -649,7 +649,7 @@ describe('ModuleController', () => {
       controller.suspend();
 
       expect(mockLog.log).toHaveBeenCalledWith(
-        '[MMM-SynInsta] Frontend suspend called'
+        '[MMM-SynInstax] Frontend suspend called'
       );
     });
 
@@ -657,7 +657,7 @@ describe('ModuleController', () => {
       controller.suspend();
 
       expect(mockLog.log).toHaveBeenCalledWith(
-        '[MMM-SynInsta] Frontend suspend called'
+        '[MMM-SynInstax] Frontend suspend called'
       );
     });
   });
@@ -671,7 +671,7 @@ describe('ModuleController', () => {
       controller.resume();
 
       expect(mockLog.log).toHaveBeenCalledWith(
-        '[MMM-SynInsta] Frontend resume called'
+        '[MMM-SynInstax] Frontend resume called'
       );
     });
 
@@ -719,7 +719,7 @@ describe('ModuleController', () => {
       controller.updateImageList();
 
       expect(mockLog.log).toHaveBeenCalledWith(
-        '[MMM-SynInsta] Frontend suspend called'
+        '[MMM-SynInstax] Frontend suspend called'
       );
     });
 
@@ -744,7 +744,7 @@ describe('ModuleController', () => {
       controller.socketNotificationReceived('BACKGROUNDSLIDESHOW_PLAY', {});
 
       expect(mockLog.log).toHaveBeenCalledWith(
-        '[MMM-SynInsta] PLAY notification'
+        '[MMM-SynInstax] PLAY notification'
       );
       expect(mockCallbacks.sendSocketNotification).toHaveBeenCalledWith(
         'BACKGROUNDSLIDESHOW_PLAY'
@@ -767,7 +767,7 @@ describe('ModuleController', () => {
       );
 
       expect(mockLog.log).toHaveBeenCalledWith(
-        '[MMM-SynInsta] Changing Background'
+        '[MMM-SynInstax] Changing Background'
       );
     });
 
@@ -799,7 +799,7 @@ describe('ModuleController', () => {
 
       // Should not crash or call sendSocketNotification for missing URL
       expect(mockLog.log).toHaveBeenCalledWith(
-        '[MMM-SynInsta] Frontend received notification:',
+        '[MMM-SynInstax] Frontend received notification:',
         'BACKGROUNDSLIDESHOW_URL',
         payload
       );
@@ -873,7 +873,7 @@ describe('ModuleController', () => {
       // Simulate image error after a short delay
       setTimeout(() => {
         expect(mockLog.log).toHaveBeenCalledWith(
-          '[MMM-SynInsta] Creating image element, src:',
+          '[MMM-SynInstax] Creating image element, src:',
           'invalid-data'
         );
         done();
@@ -892,8 +892,8 @@ describe('ModuleController', () => {
       controller.displayImage(imageInfo);
 
       expect(mockCallbacks.sendSocketNotification).toHaveBeenCalledWith(
-        'BACKGROUNDSLIDESHOW_PLAY_VIDEO',
-        expect.arrayContaining(['TEST.MP4', 'PLAY'])
+        'BACKGROUNDSLIDESHOW_IMAGE_UPDATED',
+        { url: 'TEST.MP4' }
       );
     });
   });
@@ -1181,8 +1181,8 @@ describe('ModuleController', () => {
       controller.displayImage(videoInfo);
 
       expect(mockCallbacks.sendSocketNotification).toHaveBeenCalledWith(
-        'BACKGROUNDSLIDESHOW_PLAY_VIDEO',
-        expect.any(Array)
+        'BACKGROUNDSLIDESHOW_IMAGE_UPDATED',
+        { url: 'video.mp4' }
       );
     });
 
@@ -1192,7 +1192,7 @@ describe('ModuleController', () => {
       controller.resume();
 
       expect(mockLog.log).toHaveBeenCalledWith(
-        '[MMM-SynInsta] Frontend resume called'
+        '[MMM-SynInstax] Frontend resume called'
       );
     });
 

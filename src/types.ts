@@ -1,14 +1,15 @@
 /**
- * Types for MMM-SynInsta
+ * Types for MMM-SynInstax
  */
 
 export interface PhotoItem {
   path: string;
   url?: string;
+  mediaUrl?: string;
+  mediaType?: 'image' | 'video' | 'live';
+  mimeType?: string;
   created: number;
   modified: number;
-  captionDate?: number;
-  captionLocation?: string;
 }
 
 export interface ModuleConfig {
@@ -77,24 +78,15 @@ export interface ModuleConfig {
   photoHeight: number | null;
   flyInDuration: number;
   flyOutDuration: number;
-  animateInitialStack: boolean;
-  showPhotoCaption: boolean;
-  showPhotoCaptionDate: boolean;
-  showPhotoCaptionLocation: boolean;
-  photoCaptionDateFormat: string;
 }
 
 export interface ImageInfo {
   identifier: string;
   path: string;
   data: string;
+  mediaUrl?: string;
+  mediaType?: 'image' | 'video' | 'live';
+  mimeType?: string;
   index: number;
   total: number;
-  captionDate?: number;
-  captionLocation?: string;
-}
-
-export interface PhotoCaptionMetadata {
-  date?: string;
-  location?: string;
 }

@@ -2,7 +2,7 @@
  * SynologyPhotosClient.ts
  *
  * MagicMirror²
- * Module: MMM-SynInsta
+ * Module: MMM-SynInstax
  *
  * Synology Photos API client for fetching images
  * By Spydersoft Consulting
@@ -10,7 +10,6 @@
  */
 
 import axios from 'axios';
-import { TextDecoder } from 'node:util';
 import Log from './Logger';
 import type { ModuleConfig, PhotoItem } from '../types';
 
@@ -18,33 +17,22 @@ interface SynologyPhoto {
   id: number;
   type: string;
   filename?: string;
+  mimetype?: string;
   time?: number;
   indexed_time?: number;
   additional?: {
     thumbnail?: {
       cache_key?: string;
     };
-    gps?: {
-      latitude?: number;
-      longitude?: number;
-    };
-    address?: SynologyAddress;
   };
 }
 
-interface SynologyAddress {
-  country?: string;
-  state?: string;
-  county?: string;
-  city?: string;
-  town?: string;
-  village?: string;
-  district?: string;
-  landmark?: string;
-  route?: string;
+interface SynologyAlbum {
+  id: number;
+  name: string;
 }
 
-interface SynologyAlbum {
+interface SynologyFolder {
   id: number;
   name: string;
 }
@@ -58,11 +46,13 @@ interface TagIds {
   [key: string]: number[];
 }
 
+interface SourceRef {
+  id: number;
+  kind: 'album' | 'folder';
+  spaceId: number | null;
+}
+
 class SynologyPhotosClient {
-  private static readonly windows1250Decoder = new TextDecoder('windows-1250');
-
-  private static readonly windows1252Decoder = new TextDecoder('windows-1252');
-
   private readonly baseUrl: string;
 
   private readonly account: string;
@@ -77,7 +67,7 @@ class SynologyPhotosClient {
 
   private sid: string | null = null;
 
-  private folderIds: number[] = [];
+  private sourceRefs: SourceRef[] = [];
 
   private tagIds: TagIds = {};
 
@@ -98,125 +88,6 @@ class SynologyPhotosClient {
     this.tagNames = config.synologyTagNames || [];
     this.useSharedAlbum = Boolean(this.shareToken);
     this.maxPhotosToFetch = config.synologyMaxPhotos || 1000;
-  }
-
-  private static canonicalizeName(value: string): string {
-    return value.normalize('NFKC').trim().toLocaleLowerCase('hu-HU');
-  }
-
-  private static simplifyName(value: string): string {
-    return SynologyPhotosClient.canonicalizeName(value)
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/gu, '')
-      .replace(/\s+/gu, ' ');
-  }
-
-  private static decodeUtf8Mojibake(value: string): string | null {
-    try {
-      const decoded = Buffer.from(value, 'latin1').toString('utf8');
-      return decoded.includes('\uFFFD') || decoded === value ? null : decoded;
-    } catch {
-      return null;
-    }
-  }
-
-  private static encodeUtf8AsSingleByte(
-    value: string,
-    decoder: TextDecoder
-  ): string | null {
-    try {
-      const encoded = decoder.decode(Buffer.from(value, 'utf8'));
-      return encoded === value ? null : encoded;
-    } catch {
-      return null;
-    }
-  }
-
-  private static getNameVariants(value: string): Set<string> {
-    const variants = new Set<string>();
-    const addVariant = (variant: string | null): void => {
-      if (variant) {
-        variants.add(SynologyPhotosClient.canonicalizeName(variant));
-      }
-    };
-
-    addVariant(value);
-
-    let current = value;
-    for (let index = 0; index < 3; index += 1) {
-      const decoded = SynologyPhotosClient.decodeUtf8Mojibake(current);
-      if (!decoded) {
-        break;
-      }
-      addVariant(decoded);
-      current = decoded;
-    }
-
-    for (const decoder of [
-      SynologyPhotosClient.windows1250Decoder,
-      SynologyPhotosClient.windows1252Decoder
-    ]) {
-      current = value;
-      for (let index = 0; index < 3; index += 1) {
-        const encoded = SynologyPhotosClient.encodeUtf8AsSingleByte(
-          current,
-          decoder
-        );
-        if (!encoded) {
-          break;
-        }
-        addVariant(encoded);
-        current = encoded;
-      }
-    }
-
-    return variants;
-  }
-
-  private static wildcardNameMatches(pattern: string, target: string): boolean {
-    if (!/[\uFFFD?]/u.test(pattern)) {
-      return false;
-    }
-
-    const escapedPattern = pattern
-      .split(/[\uFFFD?]+/u)
-      .map((part) => part.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&'))
-      .join('.{1,4}');
-
-    return new RegExp(`^${escapedPattern}$`, 'u').test(target);
-  }
-
-  private static fuzzyNamesMatch(left: string, right: string): boolean {
-    const leftSimplified = SynologyPhotosClient.simplifyName(left);
-    const rightSimplified = SynologyPhotosClient.simplifyName(right);
-
-    return (
-      leftSimplified === rightSimplified ||
-      SynologyPhotosClient.wildcardNameMatches(
-        leftSimplified,
-        rightSimplified
-      ) ||
-      SynologyPhotosClient.wildcardNameMatches(rightSimplified, leftSimplified)
-    );
-  }
-
-  private static namesMatch(left: string, right: string): boolean {
-    const leftVariants = SynologyPhotosClient.getNameVariants(left);
-    const rightVariants = SynologyPhotosClient.getNameVariants(right);
-
-    for (const variant of leftVariants) {
-      if (rightVariants.has(variant)) {
-        return true;
-      }
-
-      for (const rightVariant of rightVariants) {
-        if (SynologyPhotosClient.fuzzyNamesMatch(variant, rightVariant)) {
-          return true;
-        }
-      }
-    }
-
-    return false;
   }
 
   /**
@@ -267,58 +138,143 @@ class SynologyPhotosClient {
     }
 
     try {
-      const response = await axios.get(`${this.baseUrl}${this.photosApiPath}`, {
-        params: {
-          api: 'SYNO.Foto.Browse.Album',
-          version: '1',
-          method: 'list',
-          offset: 0,
-          limit: 100,
-          _sid: this.sid
-        },
-        timeout: 10000
-      });
+      this.sourceRefs = [];
+      const personalAlbums = await this.listAlbums('SYNO.Foto.Browse.Album');
+      const personalFolders = await this.listFolders('SYNO.Foto.Browse.Folder');
+      const sharedFolders = await this.listFolders(
+        'SYNO.FotoTeam.Browse.Folder',
+        1
+      );
 
-      if (response.data.success) {
-        const albums: SynologyAlbum[] = response.data.data.list;
-
-        if (!this.albumName) {
-          Log.info(`Found ${albums.length} albums, will fetch from all`);
-          this.folderIds = albums.map((album) => album.id);
-          return true;
-        }
-
-        const targetAlbum = albums.find((album) =>
-          SynologyPhotosClient.namesMatch(album.name, this.albumName)
+      if (!this.albumName) {
+        Log.info(
+          `Found ${personalAlbums.length} personal albums, ${personalFolders.length} personal folders and ${sharedFolders.length} shared folders`
         );
-
-        if (targetAlbum) {
-          Log.info(`Found album: ${targetAlbum.name}`);
-          this.folderIds = [targetAlbum.id];
-          return true;
-        }
-        Log.warn(
-          `Album "${this.albumName}" not found. Available albums: ${albums.map((a) => a.name).join(', ')}`
-        );
-        return false;
+        this.sourceRefs = [
+          ...personalAlbums.map((album) => ({
+            id: album.id,
+            kind: 'album' as const,
+            spaceId: null
+          })),
+          ...personalFolders.map((folder) => ({
+            id: folder.id,
+            kind: 'folder' as const,
+            spaceId: 0
+          })),
+          ...sharedFolders.map((folder) => ({
+            id: folder.id,
+            kind: 'folder' as const,
+            spaceId: 1
+          }))
+        ];
+        return true;
       }
-      Log.error(`Failed to list albums: ${JSON.stringify(response.data)}`);
+
+      const targetName = this.albumName.toLowerCase();
+      const targetAlbum = personalAlbums.find(
+        (album) => album.name.toLowerCase() === targetName
+      );
+      if (targetAlbum) {
+        Log.info(`Found personal album: ${targetAlbum.name}`);
+        this.sourceRefs = [
+          { id: targetAlbum.id, kind: 'album', spaceId: null }
+        ];
+        return true;
+      }
+
+      const targetPersonalFolder = personalFolders.find(
+        (folder) => folder.name.toLowerCase() === targetName
+      );
+      if (targetPersonalFolder) {
+        Log.info(`Found personal folder: ${targetPersonalFolder.name}`);
+        this.sourceRefs = [
+          { id: targetPersonalFolder.id, kind: 'folder', spaceId: 0 }
+        ];
+        return true;
+      }
+
+      const targetSharedFolder = sharedFolders.find(
+        (folder) => folder.name.toLowerCase() === targetName
+      );
+      if (targetSharedFolder) {
+        Log.info(`Found shared folder: ${targetSharedFolder.name}`);
+        this.sourceRefs = [
+          { id: targetSharedFolder.id, kind: 'folder', spaceId: 1 }
+        ];
+        return true;
+      }
+
+      Log.warn(
+        `Album/folder "${this.albumName}" not found. Available albums/folders: ${[
+          ...personalAlbums.map((a) => a.name),
+          ...personalFolders.map((f) => f.name),
+          ...sharedFolders.map((f) => f.name)
+        ].join(', ')}`
+      );
       return false;
     } catch (error) {
-      Log.error(`Error listing albums: ${(error as Error).message}`);
+      Log.error(`Error listing albums/folders: ${(error as Error).message}`);
       return false;
     }
+  }
+
+  private async listAlbums(api: string): Promise<SynologyAlbum[]> {
+    const response = await axios.get(`${this.baseUrl}${this.photosApiPath}`, {
+      params: {
+        api,
+        version: '1',
+        method: 'list',
+        offset: 0,
+        limit: 500,
+        _sid: this.sid
+      },
+      timeout: 10000
+    });
+
+    if (!response.data.success) {
+      Log.warn(`Failed to list albums via ${api}`);
+      return [];
+    }
+
+    return response.data.data.list || [];
+  }
+
+  private async listFolders(
+    api: string,
+    spaceId: number | null = 0
+  ): Promise<SynologyFolder[]> {
+    const params: Record<string, unknown> = {
+      api,
+      version: '1',
+      method: 'list',
+      offset: 0,
+      limit: 500,
+      _sid: this.sid
+    };
+
+    if (spaceId === 1) {
+      params.id = 1;
+    }
+
+    const response = await axios.get(`${this.baseUrl}${this.photosApiPath}`, {
+      params,
+      timeout: 10000
+    });
+
+    if (!response.data.success) {
+      Log.warn(`Failed to list folders via ${api}`);
+      return [];
+    }
+
+    return response.data.data.list || [];
   }
 
   /**
    * Filter tags by name
    */
   private filterMatchingTags(allTags: SynologyTag[]): SynologyTag[] {
-    return allTags.filter((tag) =>
-      this.tagNames.some((tagName) =>
-        SynologyPhotosClient.namesMatch(tag.name, tagName)
-      )
-    );
+    const tagNamesLower = new Set(this.tagNames.map((t) => t.toLowerCase()));
+    return allTags.filter((tag) => tagNamesLower.has(tag.name.toLowerCase()));
   }
 
   /**
@@ -501,14 +457,14 @@ class SynologyPhotosClient {
    * Fetch photos from albums
    */
   private async fetchPhotosFromAlbums(): Promise<PhotoItem[]> {
-    if (this.folderIds.length === 0) {
+    if (this.sourceRefs.length === 0) {
       return await this.fetchAllPhotos();
     }
 
-    const albumPromises = this.folderIds.map((folderId) =>
-      this.fetchAlbumPhotos(folderId)
+    const sourcePromises = this.sourceRefs.map((source) =>
+      this.fetchSourceItems(source)
     );
-    const photoArrays = await Promise.all(albumPromises);
+    const photoArrays = await Promise.all(sourcePromises);
     return photoArrays.flat();
   }
 
@@ -549,7 +505,7 @@ class SynologyPhotosClient {
           limit: this.maxPhotosToFetch,
           passphrase: this.shareToken,
           additional:
-            '["thumbnail","resolution","orientation","video_convert","video_meta","provider_user_id","gps","address","exif"]'
+            '["thumbnail","resolution","orientation","video_convert","video_meta","provider_user_id"]'
         },
         timeout: 30000
       });
@@ -583,7 +539,7 @@ class SynologyPhotosClient {
           limit: this.maxPhotosToFetch,
           _sid: this.sid,
           additional:
-            '["thumbnail","resolution","orientation","video_convert","video_meta","provider_user_id","gps","address","exif"]'
+            '["thumbnail","resolution","orientation","video_convert","video_meta","provider_user_id"]'
         },
         timeout: 30000
       });
@@ -599,35 +555,52 @@ class SynologyPhotosClient {
     }
   }
 
+  private getItemApi(spaceId: number | null): string {
+    return spaceId === 1
+      ? 'SYNO.FotoTeam.Browse.Item'
+      : 'SYNO.Foto.Browse.Item';
+  }
+
+  private getDownloadApi(spaceId: number | null): string {
+    return spaceId === 1 ? 'SYNO.FotoTeam.Download' : 'SYNO.Foto.Download';
+  }
+
   /**
-   * Fetch photos from a specific album
+   * Fetch media from a specific album or folder source
    */
-  private async fetchAlbumPhotos(albumId: number): Promise<PhotoItem[]> {
+  private async fetchSourceItems(source: SourceRef): Promise<PhotoItem[]> {
     try {
+      const params: Record<string, unknown> = {
+        api: this.getItemApi(source.spaceId),
+        version: '1',
+        method: 'list',
+        offset: 0,
+        limit: this.maxPhotosToFetch,
+        _sid: this.sid,
+        additional:
+          '["thumbnail","resolution","orientation","video_convert","video_meta","provider_user_id"]'
+      };
+
+      if (source.kind === 'album') {
+        params.album_id = source.id;
+      } else {
+        params.folder_id = source.id;
+      }
+
       const response = await axios.get(`${this.baseUrl}${this.photosApiPath}`, {
-        params: {
-          api: 'SYNO.Foto.Browse.Item',
-          version: '1',
-          method: 'list',
-          offset: 0,
-          limit: this.maxPhotosToFetch,
-          album_id: albumId,
-          _sid: this.sid,
-          additional:
-            '["thumbnail","resolution","orientation","video_convert","video_meta","provider_user_id","gps","address","exif"]'
-        },
+        params,
         timeout: 30000
       });
 
       if (response.data.success) {
-        return this.processPhotoList(response.data.data.list);
+        return this.processPhotoList(response.data.data.list, source.spaceId);
       }
       Log.error(
-        `Failed to fetch album photos: ${JSON.stringify(response.data)}`
+        `Failed to fetch ${source.kind} media: ${JSON.stringify(response.data)}`
       );
       return [];
     } catch (error) {
-      Log.error(`Error fetching album photos: ${(error as Error).message}`);
+      Log.error(`Error fetching source media: ${(error as Error).message}`);
       return [];
     }
   }
@@ -641,15 +614,14 @@ class SynologyPhotosClient {
   ): Promise<PhotoItem[]> {
     try {
       const params: Record<string, unknown> = {
-        api:
-          spaceId === 1 ? 'SYNO.FotoTeam.Browse.Item' : 'SYNO.Foto.Browse.Item',
+        api: this.getItemApi(spaceId),
         version: '1',
         method: 'list',
         offset: 0,
         limit: this.maxPhotosToFetch,
         general_tag_id: tagId,
         additional:
-          '["thumbnail","resolution","orientation","video_convert","video_meta","provider_user_id","gps","address","exif"]'
+          '["thumbnail","resolution","orientation","video_convert","video_meta","provider_user_id"]'
       };
 
       if (this.useSharedAlbum) {
@@ -716,7 +688,12 @@ class SynologyPhotosClient {
     const imageList: PhotoItem[] = [];
 
     for (const photo of photos) {
-      if (photo.type !== 'photo' && photo.type !== 'live_photo') {
+      if (
+        photo.type !== 'photo' &&
+        photo.type !== 'live_photo' &&
+        photo.type !== 'live' &&
+        photo.type !== 'video'
+      ) {
         continue;
       }
 
@@ -725,15 +702,26 @@ class SynologyPhotosClient {
         photo.additional?.thumbnail?.cache_key,
         spaceId
       );
+      const mediaType = this.getMediaType(photo);
+      const mimeType = photo.mimetype || this.getMimeType(photo);
+      const mediaUrl =
+        mediaType === 'video' || mimeType === 'image/gif'
+          ? this.getOriginalMediaUrl(
+              photo.id,
+              photo.additional?.thumbnail?.cache_key,
+              spaceId
+            )
+          : imageUrl;
       const uniqueId = spaceId === null ? photo.id : `${spaceId}_${photo.id}`;
 
       imageList.push({
         path: photo.filename || `photo_${photo.id}`,
         url: imageUrl,
+        mediaUrl,
+        mediaType,
+        mimeType,
         created: photo.time ? photo.time * 1000 : Date.now(),
         modified: photo.indexed_time ? photo.indexed_time * 1000 : Date.now(),
-        captionDate: photo.time ? photo.time * 1000 : undefined,
-        captionLocation: this.formatPhotoLocation(photo),
         id: uniqueId,
         synologyId: photo.id,
         spaceId,
@@ -749,28 +737,32 @@ class SynologyPhotosClient {
     return imageList;
   }
 
-  private formatPhotoLocation(photo: SynologyPhoto): string | undefined {
-    const address = photo.additional?.address;
-    if (address) {
-      const city = [
-        address.city,
-        address.town,
-        address.village,
-        address.district,
-        address.country
-      ].find((part) => part?.trim());
-      if (city) {
-        return city.trim();
-      }
+  private getMediaType(photo: SynologyPhoto): 'image' | 'video' | 'live' {
+    if (photo.type === 'video') {
+      return 'video';
     }
-
-    const latitude = photo.additional?.gps?.latitude;
-    const longitude = photo.additional?.gps?.longitude;
-    if (Number.isFinite(latitude) && Number.isFinite(longitude)) {
-      return `${latitude!.toFixed(5)}, ${longitude!.toFixed(5)}`;
+    if (photo.type === 'live_photo' || photo.type === 'live') {
+      return 'live';
     }
+    return 'image';
+  }
 
-    return undefined;
+  private getMimeType(photo: SynologyPhoto): string {
+    const filename = photo.filename || '';
+    const ext = filename.split('.').pop()?.toLowerCase();
+    if (
+      photo.type === 'video' ||
+      ['mp4', 'm4v', 'mov', 'webm'].includes(ext || '')
+    ) {
+      return ext === 'webm' ? 'video/webm' : 'video/mp4';
+    }
+    if (ext === 'gif') {
+      return 'image/gif';
+    }
+    if (ext === 'png') {
+      return 'image/png';
+    }
+    return 'image/jpeg';
   }
 
   /**
@@ -794,6 +786,25 @@ class SynologyPhotosClient {
       if (spaceId === 0) {
         url += `&space_id=${spaceId}`;
       }
+    }
+
+    return url;
+  }
+
+  private getOriginalMediaUrl(
+    photoId: number,
+    cacheKey: string | undefined,
+    spaceId: number | null = null
+  ): string {
+    const api = this.getDownloadApi(spaceId);
+    const quotedCacheKey = `"${cacheKey}"`;
+    const unitId = `[${photoId}]`;
+    let url = `${this.baseUrl}${this.photosApiPath}?api=${api}&version=1&method=download&unit_id=${unitId}&cache_key=${quotedCacheKey}`;
+
+    if (this.useSharedAlbum) {
+      url += `&passphrase=${this.shareToken}`;
+    } else {
+      url += `&_sid=${this.sid}`;
     }
 
     return url;

@@ -5,7 +5,7 @@
  * Provides consistent logging with module prefix
  */
 
-const LOG_PREFIX = '[MMM-SynInsta]';
+const LOG_PREFIX = '[MMM-SynInstax]';
 
 interface LoggerInterface {
   info(message: string, ...args: unknown[]): void;

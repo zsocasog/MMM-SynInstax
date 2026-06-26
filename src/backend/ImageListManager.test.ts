@@ -38,10 +38,10 @@ describe('ImageListManager', () => {
       manager.addImageToShown(imgPath);
 
       expect(FileSystem.existsSync).toHaveBeenCalledWith(
-        'modules/MMM-SynInsta/filesShownTracker.txt'
+        'modules/MMM-SynInstax/filesShownTracker.txt'
       );
       expect(FileSystem.appendFileSync as jest.Mock).toHaveBeenCalledWith(
-        'modules/MMM-SynInsta/filesShownTracker.txt',
+        'modules/MMM-SynInstax/filesShownTracker.txt',
         'test-image.jpg\n'
       );
     });
@@ -53,7 +53,7 @@ describe('ImageListManager', () => {
       manager.addImageToShown(imgPath);
 
       expect(FileSystem.writeFileSync).toHaveBeenCalledWith(
-        'modules/MMM-SynInsta/filesShownTracker.txt',
+        'modules/MMM-SynInstax/filesShownTracker.txt',
         'test-image.jpg\n',
         { flag: 'wx' }
       );
@@ -75,7 +75,7 @@ describe('ImageListManager', () => {
       manager.resetShownImagesTracker();
 
       expect(FileSystem.writeFileSync).toHaveBeenCalledWith(
-        'modules/MMM-SynInsta/filesShownTracker.txt',
+        'modules/MMM-SynInstax/filesShownTracker.txt',
         '',
         'utf8'
       );

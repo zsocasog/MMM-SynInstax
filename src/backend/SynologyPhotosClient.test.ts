@@ -158,7 +158,7 @@ describe('SynologyPhotosClient', () => {
       const result = await client.findAlbum();
 
       expect(result).toBe(true);
-      expect(Log.info).toHaveBeenCalledWith('Found album: TestAlbum');
+      expect(Log.info).toHaveBeenCalledWith('Found personal album: TestAlbum');
     });
 
     test('should handle case-insensitive matching', async () => {
@@ -176,58 +176,29 @@ describe('SynologyPhotosClient', () => {
       expect(result).toBe(true);
     });
 
-    test('should match UTF-8 album names returned as mojibake', async () => {
-      mockConfig.synologyAlbumName = 'Válogatás';
+    test('should find matching shared space folder', async () => {
+      mockConfig.synologyAlbumName = 'SharedFolder';
       client = new SynologyPhotosClient(mockConfig as ModuleConfig);
-      (axios.get as jest.Mock).mockResolvedValue({
-        data: {
-          success: true,
+      (axios.get as jest.Mock)
+        .mockResolvedValueOnce({
+          data: { success: true, data: { list: [] } }
+        })
+        .mockResolvedValueOnce({
+          data: { success: true, data: { list: [] } }
+        })
+        .mockResolvedValueOnce({
           data: {
-            list: [{ id: 2, name: 'VÃ¡logatÃ¡s' }]
+            success: true,
+            data: { list: [{ id: 10, name: 'SharedFolder' }] }
           }
-        }
-      });
+        });
 
       const result = await client.findAlbum();
 
       expect(result).toBe(true);
-      expect(Log.info).toHaveBeenCalledWith('Found album: VÃ¡logatÃ¡s');
-    });
-
-    test('should match Central European mojibake album names', async () => {
-      mockConfig.synologyAlbumName = 'Válogatás';
-      client = new SynologyPhotosClient(mockConfig as ModuleConfig);
-      (axios.get as jest.Mock).mockResolvedValue({
-        data: {
-          success: true,
-          data: {
-            list: [{ id: 2, name: 'VĂˇlogatĂˇs' }]
-          }
-        }
-      });
-
-      const result = await client.findAlbum();
-
-      expect(result).toBe(true);
-      expect(Log.info).toHaveBeenCalledWith('Found album: VĂˇlogatĂˇs');
-    });
-
-    test('should match album names with replacement characters from ISO-8859-1 config files', async () => {
-      mockConfig.synologyAlbumName = 'V\uFFFDlogat\uFFFDs';
-      client = new SynologyPhotosClient(mockConfig as ModuleConfig);
-      (axios.get as jest.Mock).mockResolvedValue({
-        data: {
-          success: true,
-          data: {
-            list: [{ id: 2, name: 'V\u00E1logat\u00E1s' }]
-          }
-        }
-      });
-
-      const result = await client.findAlbum();
-
-      expect(result).toBe(true);
-      expect(Log.info).toHaveBeenCalledWith('Found album: Válogatás');
+      expect(Log.info).toHaveBeenCalledWith(
+        'Found shared folder: SharedFolder'
+      );
     });
 
     test('should return false when album not found', async () => {
@@ -310,40 +281,6 @@ describe('SynologyPhotosClient', () => {
       expect(result).toBe(true);
     });
 
-    test('should match UTF-8 tag names returned as mojibake', async () => {
-      mockConfig.synologyTagNames = ['Válogatás'];
-      client = new SynologyPhotosClient(mockConfig as ModuleConfig);
-      (axios.get as jest.Mock).mockResolvedValue({
-        data: {
-          success: true,
-          data: {
-            list: [{ id: 1, name: 'VÃ¡logatÃ¡s' }]
-          }
-        }
-      });
-
-      const result = await client.findTags();
-
-      expect(result).toBe(true);
-    });
-
-    test('should match tag names with replacement characters from ISO-8859-1 config files', async () => {
-      mockConfig.synologyTagNames = ['V\uFFFDlogat\uFFFDs'];
-      client = new SynologyPhotosClient(mockConfig as ModuleConfig);
-      (axios.get as jest.Mock).mockResolvedValue({
-        data: {
-          success: true,
-          data: {
-            list: [{ id: 1, name: 'V\u00E1logat\u00E1s' }]
-          }
-        }
-      });
-
-      const result = await client.findTags();
-
-      expect(result).toBe(true);
-    });
-
     test('should return false when no matching tags found', async () => {
       (axios.get as jest.Mock).mockResolvedValue({
         data: {
@@ -400,38 +337,6 @@ describe('SynologyPhotosClient', () => {
       expect(Log.info).toHaveBeenCalledWith(expect.stringContaining('Fetched'));
     });
 
-    test('should map Synology date and city into caption metadata', async () => {
-      (axios.get as jest.Mock).mockResolvedValue({
-        data: {
-          success: true,
-          data: {
-            list: [
-              {
-                id: 1,
-                type: 'photo',
-                filename: 'photo1.jpg',
-                time: 1717243200,
-                additional: {
-                  thumbnail: { cache_key: 'key1' },
-                  address: {
-                    landmark: 'Margitsziget',
-                    city: 'Budapest',
-                    country: 'Magyarország'
-                  },
-                  gps: { latitude: 47.528, longitude: 19.046 }
-                }
-              }
-            ]
-          }
-        }
-      });
-
-      const result = await client.fetchPhotos();
-
-      expect(result[0].captionDate).toBe(1717243200000);
-      expect(result[0].captionLocation).toBe('Budapest');
-    });
-
     test('should return empty array on error', async () => {
       (axios.get as jest.Mock).mockRejectedValue(new Error('Fetch error'));
 
@@ -452,6 +357,44 @@ describe('SynologyPhotosClient', () => {
       const result = await client.fetchPhotos();
 
       expect(result).toEqual([]);
+    });
+
+    test('should include videos and GIFs with original media URLs', async () => {
+      (axios.get as jest.Mock).mockResolvedValue({
+        data: {
+          success: true,
+          data: {
+            list: [
+              {
+                id: 1,
+                type: 'video',
+                filename: 'clip.mp4',
+                additional: { thumbnail: { cache_key: 'key1' } }
+              },
+              {
+                id: 2,
+                type: 'photo',
+                filename: 'loop.gif',
+                additional: { thumbnail: { cache_key: 'key2' } }
+              }
+            ]
+          }
+        }
+      });
+
+      const result = await client.fetchPhotos();
+
+      expect(result).toHaveLength(2);
+      expect(result[0]).toMatchObject({
+        mediaType: 'video',
+        mimeType: 'video/mp4'
+      });
+      expect(result[0].mediaUrl).toContain('SYNO.Foto.Download');
+      expect(result[1]).toMatchObject({
+        mediaType: 'image',
+        mimeType: 'image/gif'
+      });
+      expect(result[1].mediaUrl).toContain('SYNO.Foto.Download');
     });
   });
 

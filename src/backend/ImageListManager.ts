@@ -13,10 +13,14 @@ class ImageListManager {
 
   private alreadyShownSet: Set<string> = new Set();
 
+  private randomizeImageOrder = false;
+
+  private lastImagePath: string | null = null;
+
   public index = 0;
 
   private readonly trackerFilePath =
-    'modules/MMM-SynInsta/filesShownTracker.txt';
+    'modules/MMM-SynInstax/filesShownTracker.txt';
 
   /**
    * Shuffle array randomly using Fisher-Yates algorithm
@@ -25,27 +29,38 @@ class ImageListManager {
   private shuffleArray(array: PhotoItem[]): PhotoItem[] {
     const shuffled = [...array];
 
-    // Create a simple seeded random number generator using current time
-    // This ensures different shuffle patterns on each restart
-    let seed = Date.now();
-    const seededRandom = (): number => {
-      seed = (seed * 9301 + 49297) % 233280;
-      return seed / 233280;
-    };
-
-    // First pass: shuffle with seeded random to break restart patterns
+    // Fisher-Yates with crypto-backed randomness where Node provides it.
     for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(seededRandom() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-    }
-
-    // Second pass: shuffle with Math.random for additional randomness
-    for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
+      const randomValue =
+        typeof crypto !== 'undefined' && crypto.getRandomValues
+          ? crypto.getRandomValues(new Uint32Array(1))[0] / 2 ** 32
+          : Math.random();
+      const j = Math.floor(randomValue * (i + 1));
       [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
     }
 
     return shuffled;
+  }
+
+  private reshuffleForNextCycle(): void {
+    if (!this.randomizeImageOrder || this.imageList.length < 2) {
+      return;
+    }
+
+    const previousLastPath = this.lastImagePath;
+    this.imageList = this.shuffleArray(this.imageList);
+
+    if (previousLastPath && this.imageList[0].path === previousLastPath) {
+      const swapIndex = this.imageList.findIndex(
+        (image) => image.path !== previousLastPath
+      );
+      if (swapIndex > 0) {
+        [this.imageList[0], this.imageList[swapIndex]] = [
+          this.imageList[swapIndex],
+          this.imageList[0]
+        ];
+      }
+    }
   }
 
   /**
@@ -157,6 +172,7 @@ class ImageListManager {
    */
   prepareImageList(images: PhotoItem[], config: ModuleConfig): PhotoItem[] {
     this.imageList = images;
+    this.randomizeImageOrder = config.randomizeImageOrder;
 
     // Load shown images tracker if needed
     if (config.showAllImagesBeforeRestart) {
@@ -216,10 +232,12 @@ class ImageListManager {
     // Loop back to beginning if reached the end
     if (this.index >= this.imageList.length) {
       Log.info('Reached end of list, looping to beginning');
+      this.reshuffleForNextCycle();
       this.index = 0;
     }
 
     const image = this.imageList[this.index++];
+    this.lastImagePath = image.path;
     Log.info(
       `Displaying image ${this.index}/${this.imageList.length}: "${image.path}"`
     );

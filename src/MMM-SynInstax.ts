@@ -1,8 +1,8 @@
 /**
- * MMM-SynInsta.ts
+ * MMM-SynInstax.ts
  *
  * MagicMirror²
- * Module: MMM-SynInsta
+ * Module: MMM-SynInstax
  *
  * MagicMirror² By Michael Teeuw https://michaelteeuw.nl
  * MIT Licensed.
@@ -33,10 +33,7 @@ declare const moment: (
 ) => { format: (format: string) => string };
 declare const EXIF: {
   getData: (image: HTMLImageElement, callback: () => void) => void;
-  getTag: (
-    image: HTMLImageElement,
-    tag: string
-  ) => string | number | number[] | null;
+  getTag: (image: HTMLImageElement, tag: string) => string | number | null;
 };
 
 interface ModuleInstance {
@@ -153,13 +150,8 @@ const moduleDefinition: Partial<ModuleInstance> = {
     frameWidth: 16,
     photoWidth: null,
     photoHeight: null,
-    flyInDuration: 650,
-    flyOutDuration: 350,
-    animateInitialStack: false,
-    showPhotoCaption: true,
-    showPhotoCaptionDate: true,
-    showPhotoCaptionLocation: true,
-    photoCaptionDateFormat: 'YYYY.MM.DD HH:mm'
+    flyInDuration: 1200,
+    flyOutDuration: 800
   } as ModuleConfig,
 
   start(this: ModuleInstance): void {
@@ -185,7 +177,7 @@ const moduleDefinition: Partial<ModuleInstance> = {
   },
 
   getStyles(): string[] {
-    return ['SynInsta.css'];
+    return ['SynInstax.css'];
   },
 
   getTranslations(): Record<string, string> {
@@ -216,4 +208,4 @@ const moduleDefinition: Partial<ModuleInstance> = {
   }
 };
 
-Module.register('MMM-SynInsta', moduleDefinition);
+Module.register('MMM-SynInstax', moduleDefinition);

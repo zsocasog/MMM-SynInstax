@@ -1,10 +1,10 @@
 {
-  "name": "mmm-syninsta",
+  "name": "mmm-syninstax",
   "version": "2.0.0",
   "description": "Display Synology Photos on MagicMirror in Instax-style photo stack frames.",
   "repository": {
     "type": "git",
-    "url": "https://github.com/zsocasog/MMM-SynInsta.git"
+    "url": "https://github.com/zsocasog/MMM-SynInstax.git"
   },
   "keywords": [
     "magicmirror",
@@ -20,7 +20,7 @@
     "name": "Spydersoft Consulting",
     "url": "https://github.com/spydersoft-consulting"
   },
-  "main": "MMM-SynInsta.js",
+  "main": "MMM-SynInstax.js",
   "type": "commonjs",
   "license": "MIT",
   "dependencies": {

@@ -1,6 +1,6 @@
-/* MMM-SynInsta Styles */
+/* MMM-SynInstax Styles */
 
-.MMM-SynInsta {
+.MMM-SynInstax {
 	/* Main container for all images */
 	.images {
 		position: absolute;
@@ -118,111 +118,89 @@
 	}
 }
 
-.syninsta-stack-container {
+.syninstax-stack-container {
 	position: fixed;
 	overflow: hidden;
-	background-color: var(--syninsta-background-color, transparent);
+	background-color: var(--syninstax-background-color, transparent);
 	perspective: 1000px;
 	pointer-events: none;
 }
 
-.syninsta-card {
+.syninstax-card {
 	position: absolute;
 	top: 50%;
 	left: 50%;
-	background: var(--syninsta-frame-color, #fff);
-	padding: var(--syninsta-frame-width, 16px);
-	padding-bottom: calc(var(--syninsta-frame-width, 16px) * 3.75);
+	background: var(--syninstax-frame-color, #fff);
+	padding: var(--syninstax-frame-width, 16px);
+	padding-bottom: calc(var(--syninstax-frame-width, 16px) * 2.5);
 	box-shadow:
-		0 6px 16px rgba(0, 0, 0, 0.28),
-		0 1px 4px rgba(0, 0, 0, 0.22);
-	transform: translate3d(
-			calc(-50% + var(--syninsta-rest-x, 0px)),
-			calc(-50% + var(--syninsta-rest-y, 0px)),
-			0
+		0 8px 24px rgba(0, 0, 0, 0.4),
+		0 2px 6px rgba(0, 0, 0, 0.3);
+	transform: translate(
+			calc(-50% + var(--syninstax-rest-x, 0px)),
+			calc(-50% + var(--syninstax-rest-y, 0px))
 		)
-		rotate(var(--syninsta-rest-rotate, 0deg));
+		rotate(var(--syninstax-rest-rotate, 0deg));
 	will-change: transform;
-	backface-visibility: hidden;
 }
 
-.syninsta-image {
+.syninstax-media {
 	display: block;
 	width: auto;
 	height: auto;
-	max-width: var(--syninsta-photo-width, 100%);
-	max-height: var(--syninsta-photo-height, 100%);
+	max-width: var(--syninstax-photo-width, 100%);
+	max-height: var(--syninstax-photo-height, 100%);
 	object-fit: contain;
 }
 
-.syninsta-caption {
-	position: absolute;
-	right: var(--syninsta-frame-width, 16px);
-	bottom: calc(var(--syninsta-frame-width, 16px) * 0.85);
-	left: var(--syninsta-frame-width, 16px);
-	overflow: hidden;
-	color: #151515;
-	font-family: "Comic Sans MS", "Comic Sans", "Segoe Print", "Chalkboard SE",
-		"Marker Felt", "Bradley Hand", cursive;
-	font-size: clamp(18px, calc(var(--syninsta-frame-width, 16px) * 1.75), 36px);
-	font-style: italic;
-	font-weight: 900;
-	letter-spacing: 0;
-	line-height: 1.05;
-	text-align: center;
-	text-shadow: 0 1px 0 rgba(255, 255, 255, 0.7);
-	text-overflow: ellipsis;
-	white-space: nowrap;
+.syninstax-video {
+	background: #000;
 }
 
-@keyframes syninsta-fly-in {
+@keyframes syninstax-fly-in {
 	from {
-		transform: translate3d(
-				calc(-50% + var(--syninsta-in-x, 0vw)),
-				calc(-50% + var(--syninsta-in-y, -100vh)),
-				0
+		transform: translate(
+				calc(-50% + var(--syninstax-in-x, 0vw)),
+				calc(-50% + var(--syninstax-in-y, -100vh))
 			)
 			rotate(0deg)
-			scale(1.03);
+			scale(1.1);
 	}
 	to {
-		transform: translate3d(
-				calc(-50% + var(--syninsta-rest-x, 0px)),
-				calc(-50% + var(--syninsta-rest-y, 0px)),
-				0
+		transform: translate(
+				calc(-50% + var(--syninstax-rest-x, 0px)),
+				calc(-50% + var(--syninstax-rest-y, 0px))
 			)
-			rotate(var(--syninsta-rest-rotate, 0deg));
+			rotate(var(--syninstax-rest-rotate, 0deg));
 	}
 }
 
-.syninsta-card.syninsta-fly-in {
-	animation: syninsta-fly-in var(--syninsta-fly-in-duration, 1200ms)
+.syninstax-card.syninstax-fly-in {
+	animation: syninstax-fly-in var(--syninstax-fly-in-duration, 1200ms)
 		cubic-bezier(0.2, 0.8, 0.2, 1.05) both;
 }
 
-@keyframes syninsta-fly-out {
+@keyframes syninstax-fly-out {
 	from {
-		transform: translate3d(
-				calc(-50% + var(--syninsta-rest-x, 0px)),
-				calc(-50% + var(--syninsta-rest-y, 0px)),
-				0
+		transform: translate(
+				calc(-50% + var(--syninstax-rest-x, 0px)),
+				calc(-50% + var(--syninstax-rest-y, 0px))
 			)
-			rotate(var(--syninsta-rest-rotate, 0deg));
+			rotate(var(--syninstax-rest-rotate, 0deg));
 		opacity: 1;
 	}
 	to {
-		transform: translate3d(
-				calc(-50% + var(--syninsta-rest-x, 0px)),
-				calc(-50% + var(--syninsta-rest-y, 0px) + 120px),
-				0
+		transform: translate(
+				calc(-50% + var(--syninstax-rest-x, 0px)),
+				calc(-50% + var(--syninstax-rest-y, 0px) + 200px)
 			)
-			rotate(var(--syninsta-rest-rotate, 0deg));
+			rotate(var(--syninstax-rest-rotate, 0deg));
 		opacity: 0;
 	}
 }
 
-.syninsta-card.syninsta-fly-out {
-	animation: syninsta-fly-out var(--syninsta-fly-out-duration, 800ms) ease-in
+.syninstax-card.syninstax-fly-out {
+	animation: syninstax-fly-out var(--syninstax-fly-out-duration, 800ms) ease-in
 		both;
 	pointer-events: none;
 }
