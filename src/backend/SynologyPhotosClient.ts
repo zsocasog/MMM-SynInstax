@@ -170,9 +170,8 @@ class SynologyPhotosClient {
         return true;
       }
 
-      const targetName = this.albumName.toLowerCase();
-      const targetAlbum = personalAlbums.find(
-        (album) => album.name.toLowerCase() === targetName
+      const targetAlbum = personalAlbums.find((album) =>
+        this.namesMatch(this.albumName, album.name)
       );
       if (targetAlbum) {
         Log.info(`Found personal album: ${targetAlbum.name}`);
@@ -182,8 +181,8 @@ class SynologyPhotosClient {
         return true;
       }
 
-      const targetPersonalFolder = personalFolders.find(
-        (folder) => folder.name.toLowerCase() === targetName
+      const targetPersonalFolder = personalFolders.find((folder) =>
+        this.namesMatch(this.albumName, folder.name)
       );
       if (targetPersonalFolder) {
         Log.info(`Found personal folder: ${targetPersonalFolder.name}`);
@@ -193,8 +192,8 @@ class SynologyPhotosClient {
         return true;
       }
 
-      const targetSharedFolder = sharedFolders.find(
-        (folder) => folder.name.toLowerCase() === targetName
+      const targetSharedFolder = sharedFolders.find((folder) =>
+        this.namesMatch(this.albumName, folder.name)
       );
       if (targetSharedFolder) {
         Log.info(`Found shared folder: ${targetSharedFolder.name}`);
@@ -269,12 +268,77 @@ class SynologyPhotosClient {
     return response.data.data.list || [];
   }
 
+  private normalizeName(name: string): string {
+    return name
+      .normalize('NFKD')
+      .replace(/\p{Diacritic}/gu, '')
+      .toLowerCase()
+      .trim();
+  }
+
+  private getLossyNameSkeleton(name: string): string {
+    return this.normalizeName(name)
+      .replace(/[^a-z0-9]/gu, '')
+      .replace(/[aeiou]/gu, '');
+  }
+
+  private getNameVariants(name: string): Set<string> {
+    const variants = new Set<string>();
+    const add = (value: string): void => {
+      variants.add(value);
+      variants.add(this.normalizeName(value));
+    };
+
+    add(name);
+
+    try {
+      const mojibake = Buffer.from(name, 'utf8').toString('latin1');
+      add(mojibake);
+      add(Buffer.from(mojibake, 'latin1').toString('utf8'));
+    } catch {
+      // Ignore conversion failures and keep the original variants.
+    }
+
+    try {
+      const repaired = Buffer.from(name, 'latin1').toString('utf8');
+      add(repaired);
+      add(Buffer.from(repaired, 'utf8').toString('latin1'));
+    } catch {
+      // Ignore conversion failures and keep the original variants.
+    }
+
+    return variants;
+  }
+
+  private namesMatch(configuredName: string, synologyName: string): boolean {
+    const configuredVariants = this.getNameVariants(configuredName);
+    const synologyVariants = this.getNameVariants(synologyName);
+
+    for (const variant of configuredVariants) {
+      if (synologyVariants.has(variant)) {
+        return true;
+      }
+    }
+
+    const configuredSkeleton = this.getLossyNameSkeleton(configuredName);
+    const synologySkeleton = this.getLossyNameSkeleton(synologyName);
+    if (
+      configuredSkeleton.length >= 3 &&
+      configuredSkeleton === synologySkeleton
+    ) {
+      return true;
+    }
+
+    return false;
+  }
+
   /**
    * Filter tags by name
    */
   private filterMatchingTags(allTags: SynologyTag[]): SynologyTag[] {
-    const tagNamesLower = new Set(this.tagNames.map((t) => t.toLowerCase()));
-    return allTags.filter((tag) => tagNamesLower.has(tag.name.toLowerCase()));
+    return allTags.filter((tag) =>
+      this.tagNames.some((tagName) => this.namesMatch(tagName, tag.name))
+    );
   }
 
   /**

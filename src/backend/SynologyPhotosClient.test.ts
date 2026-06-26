@@ -176,6 +176,23 @@ describe('SynologyPhotosClient', () => {
       expect(result).toBe(true);
     });
 
+    test('should match readable Hungarian album name against mojibake variants', async () => {
+      mockConfig.synologyAlbumName = 'Válogatás';
+      client = new SynologyPhotosClient(mockConfig as ModuleConfig);
+      (axios.get as jest.Mock).mockResolvedValue({
+        data: {
+          success: true,
+          data: {
+            list: [{ id: 2, name: 'VĂÂˇlogatĂÂˇs' }]
+          }
+        }
+      });
+
+      const result = await client.findAlbum();
+
+      expect(result).toBe(true);
+    });
+
     test('should find matching shared space folder', async () => {
       mockConfig.synologyAlbumName = 'SharedFolder';
       client = new SynologyPhotosClient(mockConfig as ModuleConfig);
@@ -272,6 +289,23 @@ describe('SynologyPhotosClient', () => {
               { id: 1, name: 'VACATION' },
               { id: 2, name: 'Family' }
             ]
+          }
+        }
+      });
+
+      const result = await client.findTags();
+
+      expect(result).toBe(true);
+    });
+
+    test('should match readable Hungarian tag name against mojibake variants', async () => {
+      mockConfig.synologyTagNames = ['Válogatás'];
+      client = new SynologyPhotosClient(mockConfig as ModuleConfig);
+      (axios.get as jest.Mock).mockResolvedValue({
+        data: {
+          success: true,
+          data: {
+            list: [{ id: 1, name: 'VĂÂˇlogatĂÂˇs' }]
           }
         }
       });
