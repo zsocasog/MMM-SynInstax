@@ -143,6 +143,7 @@ const moduleDefinition: Partial<ModuleInstance> = {
     stackFixed: true,
     stackZIndex: 0,
     stackSize: 4,
+    animateInitialStack: false,
     maxRotation: 8,
     maxOffset: 30,
     frameColor: '#fff',
@@ -151,7 +152,11 @@ const moduleDefinition: Partial<ModuleInstance> = {
     photoWidth: null,
     photoHeight: null,
     flyInDuration: 1200,
-    flyOutDuration: 800
+    flyOutDuration: 800,
+    showPhotoCaption: true,
+    showPhotoCaptionDate: true,
+    showPhotoCaptionLocation: true,
+    photoCaptionDateFormat: 'YY.MM.DD'
   } as ModuleConfig,
 
   start(this: ModuleInstance): void {

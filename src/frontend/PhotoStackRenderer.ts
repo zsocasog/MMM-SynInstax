@@ -12,6 +12,11 @@ interface StackCard {
 
 type StackMediaElement = HTMLImageElement | HTMLVideoElement;
 
+interface CardOptions {
+  caption?: string;
+  animate?: boolean;
+}
+
 export default class PhotoStackRenderer {
   private readonly config: ModuleConfig;
 
@@ -53,19 +58,28 @@ export default class PhotoStackRenderer {
     return container;
   }
 
-  addCard(container: HTMLElement, image: HTMLImageElement): HTMLDivElement {
+  getCardCount(): number {
+    return this.cards.length;
+  }
+
+  addCard(
+    container: HTMLElement,
+    image: HTMLImageElement,
+    options: CardOptions = {}
+  ): HTMLDivElement {
     const img = document.createElement('img');
     img.className = 'syninstax-media syninstax-image';
     img.alt = '';
     img.src = image.src;
     this.sizeMedia(img, this.getMediaAspect(image));
-    return this.addMediaCard(container, img);
+    return this.addMediaCard(container, img, options);
   }
 
   addVideoCard(
     container: HTMLElement,
     videoUrl: string,
-    mimeType = 'video/mp4'
+    mimeType = 'video/mp4',
+    options: CardOptions = {}
   ): HTMLDivElement {
     const video = document.createElement('video');
     video.className = 'syninstax-media syninstax-video';
@@ -86,7 +100,7 @@ export default class PhotoStackRenderer {
       void video.play();
     });
 
-    return this.addMediaCard(container, video);
+    return this.addMediaCard(container, video, options);
   }
 
   settleInFlightCards(container: HTMLElement): void {
@@ -100,7 +114,8 @@ export default class PhotoStackRenderer {
 
   private addMediaCard(
     container: HTMLElement,
-    media: StackMediaElement
+    media: StackMediaElement,
+    options: CardOptions
   ): HTMLDivElement {
     const entries = [
       { x: '120vw', y: '-60vh' },
@@ -127,6 +142,16 @@ export default class PhotoStackRenderer {
     card.style.setProperty('--syninstax-in-x', entry.x);
     card.style.setProperty('--syninstax-in-y', entry.y);
     card.appendChild(media);
+    if (options.caption) {
+      const caption = document.createElement('div');
+      caption.className = 'syninstax-caption';
+      caption.textContent = options.caption;
+      card.appendChild(caption);
+    }
+
+    if (options.animate === false) {
+      card.classList.remove('syninstax-fly-in');
+    }
 
     for (const existing of this.cards) {
       for (const video of Array.from(
@@ -142,13 +167,15 @@ export default class PhotoStackRenderer {
     container.appendChild(card);
     this.cards.push({ element: card });
 
-    const settle = (): void => card.classList.remove('syninstax-fly-in');
-    card.addEventListener('animationend', (event) => {
-      if (event.animationName === 'syninstax-fly-in') {
-        settle();
-      }
-    });
-    window.setTimeout(settle, this.config.flyInDuration + 50);
+    if (options.animate !== false) {
+      const settle = (): void => card.classList.remove('syninstax-fly-in');
+      card.addEventListener('animationend', (event) => {
+        if (event.animationName === 'syninstax-fly-in') {
+          settle();
+        }
+      });
+      window.setTimeout(settle, this.config.flyInDuration + 50);
+    }
 
     while (this.cards.length > this.config.stackSize) {
       const oldest = this.cards.shift();
@@ -188,7 +215,7 @@ export default class PhotoStackRenderer {
     );
     const frame = this.config.frameWidth;
     const chromeW = frame * 2;
-    const chromeH = frame * 3.5;
+    const chromeH = frame * 4.75;
     const theta = (this.config.maxRotation * Math.PI) / 180;
     const cos = Math.cos(theta);
     const sin = Math.sin(theta);
@@ -248,9 +275,9 @@ export default class PhotoStackRenderer {
     const boundsWidth = containerWidth - 2 * offset;
     const boundsHeight = containerHeight - 2 * offset;
     const wFromWidth =
-      (boundsWidth - frame * (2 * cos + 3.5 * sin)) / (cos + sin / aspect);
+      (boundsWidth - frame * (2 * cos + 4.75 * sin)) / (cos + sin / aspect);
     const wFromHeight =
-      (boundsHeight - frame * (2 * sin + 3.5 * cos)) / (sin + cos / aspect);
+      (boundsHeight - frame * (2 * sin + 4.75 * cos)) / (sin + cos / aspect);
     let width = Math.min(wFromWidth, wFromHeight);
 
     if (this.config.photoWidth !== null) {

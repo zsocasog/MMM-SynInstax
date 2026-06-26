@@ -430,6 +430,39 @@ describe('SynologyPhotosClient', () => {
       });
       expect(result[1].mediaUrl).toContain('SYNO.Foto.Download');
     });
+
+    test('should include city-only caption location and date metadata', async () => {
+      (axios.get as jest.Mock).mockResolvedValue({
+        data: {
+          success: true,
+          data: {
+            list: [
+              {
+                id: 1,
+                type: 'photo',
+                filename: 'photo1.jpg',
+                time: 1717200000,
+                additional: {
+                  thumbnail: { cache_key: 'key1' },
+                  address: {
+                    city: 'Budapest',
+                    county: 'Pest',
+                    country: 'Hungary'
+                  }
+                }
+              }
+            ]
+          }
+        }
+      });
+
+      const result = await client.fetchPhotos();
+
+      expect(result[0]).toMatchObject({
+        captionLocation: 'Budapest',
+        captionDate: 1717200000 * 1000
+      });
+    });
   });
 
   describe('downloadPhoto', () => {

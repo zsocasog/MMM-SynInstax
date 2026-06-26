@@ -64,6 +64,12 @@ export default class ModuleController {
 
   private timer: NodeJS.Timeout | null = null;
 
+  private initialStackRequestsRemaining = 0;
+
+  private isBuildingInitialStack = false;
+
+  private hasBuiltInitialStack = false;
+
   private savedImages: string[] | null = null;
 
   private savedIndex: number | null = null;
@@ -439,17 +445,20 @@ export default class ModuleController {
 
   private displayVideo(imageinfo: ImageInfo): void {
     const videoUrl = imageinfo.mediaUrl || imageinfo.data || imageinfo.path;
+    const cardOptions = this.getInstaxCardOptions(imageinfo);
 
     if (this.config.displayMode === 'instax') {
       this.photoStackRenderer?.addVideoCard(
         this.imagesDiv!,
         videoUrl,
-        imageinfo.mimeType || 'video/mp4'
+        imageinfo.mimeType || 'video/mp4',
+        cardOptions
       );
 
       if (this.config.showProgressBar) {
         this.uiBuilder?.restartProgressBar();
       }
+      this.requestInitialStackImageIfNeeded();
       return;
     }
 
@@ -496,11 +505,16 @@ export default class ModuleController {
     );
 
     if (this.config.displayMode === 'instax') {
-      this.photoStackRenderer?.addCard(this.imagesDiv!, image);
+      this.photoStackRenderer?.addCard(
+        this.imagesDiv!,
+        image,
+        this.getInstaxCardOptions(imageinfo)
+      );
 
       if (this.config.showProgressBar) {
         this.uiBuilder?.restartProgressBar();
       }
+      this.requestInitialStackImageIfNeeded();
 
       setTimeout(() => {
         this.handleEXIFData(image, imageinfo);
@@ -610,6 +624,110 @@ export default class ModuleController {
         this.updateImageInfo(imageinfo, String(dateTime || ''));
       }
     });
+  }
+
+  private getInstaxCardOptions(imageinfo: ImageInfo): {
+    caption?: string;
+    animate?: boolean;
+  } {
+    const isInitialStack =
+      this.photoStackRenderer !== null &&
+      !this.hasBuiltInitialStack &&
+      this.photoStackRenderer.getCardCount() < this.config.stackSize;
+
+    return {
+      caption: this.formatPhotoCaption(imageinfo),
+      animate: this.config.animateInitialStack || !isInitialStack
+    };
+  }
+
+  private requestInitialStackImageIfNeeded(): void {
+    if (
+      this.config.displayMode !== 'instax' ||
+      this.hasBuiltInitialStack ||
+      !this.photoStackRenderer
+    ) {
+      return;
+    }
+
+    const cardCount = this.photoStackRenderer.getCardCount();
+    if (cardCount >= this.config.stackSize) {
+      this.hasBuiltInitialStack = true;
+      this.isBuildingInitialStack = false;
+      return;
+    }
+
+    if (this.initialStackRequestsRemaining <= 0) {
+      this.initialStackRequestsRemaining = Math.max(
+        0,
+        this.config.stackSize - cardCount
+      );
+    }
+
+    if (this.initialStackRequestsRemaining > 0) {
+      this.isBuildingInitialStack = true;
+      this.initialStackRequestsRemaining -= 1;
+      this.callbacks.sendSocketNotification('BACKGROUNDSLIDESHOW_NEXT_IMAGE');
+    }
+  }
+
+  private formatPhotoCaption(imageinfo: ImageInfo): string | undefined {
+    if (!this.config.showPhotoCaption) {
+      return undefined;
+    }
+
+    const parts: string[] = [];
+    if (this.config.showPhotoCaptionLocation && imageinfo.captionLocation) {
+      parts.push(imageinfo.captionLocation);
+    }
+
+    if (this.config.showPhotoCaptionDate && imageinfo.captionDate) {
+      parts.push(this.formatCaptionDate(imageinfo.captionDate));
+    }
+
+    return parts.filter(Boolean).join(' - ') || undefined;
+  }
+
+  private formatCaptionDate(value: number | string): string {
+    let date: Date;
+
+    if (typeof value === 'number') {
+      date = new Date(value);
+    } else if (/^\d{4}:\d{2}:\d{2}/u.test(value)) {
+      const [datePart, timePart = '00:00:00'] = value.split(' ');
+      const [year, month, day] = datePart.split(':').map(Number);
+      const [hour, minute, second] = timePart.split(':').map(Number);
+      date = new Date(year, month - 1, day, hour, minute, second);
+    } else {
+      const timestamp = Date.parse(value);
+      if (Number.isNaN(timestamp)) {
+        return String(value);
+      }
+      date = new Date(timestamp);
+    }
+
+    if (Number.isNaN(date.getTime())) {
+      return String(value);
+    }
+
+    return this.applyDateFormat(date, this.config.photoCaptionDateFormat);
+  }
+
+  private applyDateFormat(date: Date, format: string): string {
+    const pad = (value: number): string => String(value).padStart(2, '0');
+    const replacements: Record<string, string> = {
+      YYYY: String(date.getFullYear()),
+      YY: String(date.getFullYear()).slice(-2),
+      MM: pad(date.getMonth() + 1),
+      DD: pad(date.getDate()),
+      HH: pad(date.getHours()),
+      mm: pad(date.getMinutes())
+    };
+
+    return Object.entries(replacements).reduce(
+      (result, [token, replacement]) => result.replaceAll(token, replacement),
+      format
+    );
   }
 
   /**

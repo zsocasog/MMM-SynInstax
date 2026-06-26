@@ -24,7 +24,30 @@ interface SynologyPhoto {
     thumbnail?: {
       cache_key?: string;
     };
+    address?: SynologyAddress | string;
+    gps?: SynologyGps;
+    exif?: Record<string, unknown>;
   };
+}
+
+interface SynologyAddress {
+  city?: string;
+  town?: string;
+  village?: string;
+  municipality?: string;
+  district?: string;
+  county?: string;
+  state?: string;
+  country?: string;
+  formatted?: string;
+  display_name?: string;
+}
+
+interface SynologyGps {
+  latitude?: number;
+  longitude?: number;
+  lat?: number;
+  lng?: number;
 }
 
 interface SynologyAlbum {
@@ -569,7 +592,7 @@ class SynologyPhotosClient {
           limit: this.maxPhotosToFetch,
           passphrase: this.shareToken,
           additional:
-            '["thumbnail","resolution","orientation","video_convert","video_meta","provider_user_id"]'
+            '["thumbnail","resolution","orientation","video_convert","video_meta","provider_user_id","gps","address","exif"]'
         },
         timeout: 30000
       });
@@ -603,7 +626,7 @@ class SynologyPhotosClient {
           limit: this.maxPhotosToFetch,
           _sid: this.sid,
           additional:
-            '["thumbnail","resolution","orientation","video_convert","video_meta","provider_user_id"]'
+            '["thumbnail","resolution","orientation","video_convert","video_meta","provider_user_id","gps","address","exif"]'
         },
         timeout: 30000
       });
@@ -642,7 +665,7 @@ class SynologyPhotosClient {
         limit: this.maxPhotosToFetch,
         _sid: this.sid,
         additional:
-          '["thumbnail","resolution","orientation","video_convert","video_meta","provider_user_id"]'
+          '["thumbnail","resolution","orientation","video_convert","video_meta","provider_user_id","gps","address","exif"]'
       };
 
       if (source.kind === 'album') {
@@ -685,7 +708,7 @@ class SynologyPhotosClient {
         limit: this.maxPhotosToFetch,
         general_tag_id: tagId,
         additional:
-          '["thumbnail","resolution","orientation","video_convert","video_meta","provider_user_id"]'
+          '["thumbnail","resolution","orientation","video_convert","video_meta","provider_user_id","gps","address","exif"]'
       };
 
       if (this.useSharedAlbum) {
@@ -777,6 +800,8 @@ class SynologyPhotosClient {
             )
           : imageUrl;
       const uniqueId = spaceId === null ? photo.id : `${spaceId}_${photo.id}`;
+      const captionDate = photo.time ? photo.time * 1000 : undefined;
+      const captionLocation = this.formatPhotoLocation(photo);
 
       imageList.push({
         path: photo.filename || `photo_${photo.id}`,
@@ -784,6 +809,8 @@ class SynologyPhotosClient {
         mediaUrl,
         mediaType,
         mimeType,
+        captionDate,
+        captionLocation,
         created: photo.time ? photo.time * 1000 : Date.now(),
         modified: photo.indexed_time ? photo.indexed_time * 1000 : Date.now(),
         id: uniqueId,
@@ -827,6 +854,35 @@ class SynologyPhotosClient {
       return 'image/png';
     }
     return 'image/jpeg';
+  }
+
+  private formatPhotoLocation(photo: SynologyPhoto): string | undefined {
+    const address = photo.additional?.address;
+    if (address && typeof address === 'object') {
+      const city =
+        address.city ||
+        address.town ||
+        address.village ||
+        address.municipality ||
+        address.district;
+
+      if (city) {
+        return city;
+      }
+
+      if (address.country) {
+        return address.country;
+      }
+    }
+
+    const gps = photo.additional?.gps;
+    const latitude = gps?.latitude ?? gps?.lat;
+    const longitude = gps?.longitude ?? gps?.lng;
+    if (typeof latitude === 'number' && typeof longitude === 'number') {
+      return `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+    }
+
+    return undefined;
   }
 
   /**

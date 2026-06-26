@@ -193,6 +193,8 @@ export default class SlideshowController {
         mediaUrl: image.mediaUrl,
         mediaType: image.mediaType,
         mimeType: image.mimeType,
+        captionDate: image.captionDate,
+        captionLocation: image.captionLocation,
         index: this.imageListManager.index,
         total: this.imageListManager.getList().length
       };

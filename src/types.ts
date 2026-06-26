@@ -8,6 +8,8 @@ export interface PhotoItem {
   mediaUrl?: string;
   mediaType?: 'image' | 'video' | 'live';
   mimeType?: string;
+  captionDate?: number | string;
+  captionLocation?: string;
   created: number;
   modified: number;
 }
@@ -69,6 +71,7 @@ export interface ModuleConfig {
   stackFixed: boolean;
   stackZIndex: number;
   stackSize: number;
+  animateInitialStack: boolean;
   maxRotation: number;
   maxOffset: number;
   frameColor: string;
@@ -78,6 +81,10 @@ export interface ModuleConfig {
   photoHeight: number | null;
   flyInDuration: number;
   flyOutDuration: number;
+  showPhotoCaption: boolean;
+  showPhotoCaptionDate: boolean;
+  showPhotoCaptionLocation: boolean;
+  photoCaptionDateFormat: string;
 }
 
 export interface ImageInfo {
@@ -87,6 +94,8 @@ export interface ImageInfo {
   mediaUrl?: string;
   mediaType?: 'image' | 'video' | 'live';
   mimeType?: string;
+  captionDate?: number | string;
+  captionLocation?: string;
   index: number;
   total: number;
 }
