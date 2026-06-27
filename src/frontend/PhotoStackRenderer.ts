@@ -31,11 +31,20 @@ export default class PhotoStackRenderer {
     container.className = 'syninstax-stack-container';
 
     const box = this.computePhotoBox();
+    const { frameWidth } = this.config;
+    const footerHeight = frameWidth * 3.75;
+    const captionFontSize = Math.min(42, Math.max(18, frameWidth * 1.75));
+
     container.style.setProperty('--syninstax-photo-width', `${box.width}px`);
     container.style.setProperty('--syninstax-photo-height', `${box.height}px`);
+    container.style.setProperty('--syninstax-frame-width', `${frameWidth}px`);
     container.style.setProperty(
-      '--syninstax-frame-width',
-      `${this.config.frameWidth}px`
+      '--syninstax-footer-height',
+      `${footerHeight}px`
+    );
+    container.style.setProperty(
+      '--syninstax-caption-font-size',
+      `${captionFontSize}px`
     );
     container.style.setProperty(
       '--syninstax-frame-color',

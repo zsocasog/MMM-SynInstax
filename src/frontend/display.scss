@@ -132,7 +132,7 @@
   left: 50%;
   background: var(--syninstax-frame-color, #fff);
   padding: var(--syninstax-frame-width, 16px);
-  padding-bottom: calc(var(--syninstax-frame-width, 16px) * 3.75);
+  padding-bottom: var(--syninstax-footer-height, 60px);
   box-shadow:
     0 8px 24px rgba(0, 0, 0, 0.4),
     0 2px 6px rgba(0, 0, 0, 0.3);
@@ -165,17 +165,15 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  height: calc(var(--syninstax-frame-width, 16px) * 3.75);
+  box-sizing: border-box;
+  height: var(--syninstax-footer-height, 60px);
+  min-width: 0;
   overflow: hidden;
   color: #151515;
   font-family:
     'Comic Sans MS', 'Comic Sans', 'Segoe Print', 'Chalkboard SE',
     'Marker Felt', 'Bradley Hand', 'Bradley Hand ITC', cursive;
-  font-size: clamp(
-    18px,
-    calc(var(--syninstax-frame-width, 16px) * 1.75),
-    42px
-  );
+  font-size: var(--syninstax-caption-font-size, 28px);
   font-style: italic;
   font-weight: 900;
   letter-spacing: 0;
