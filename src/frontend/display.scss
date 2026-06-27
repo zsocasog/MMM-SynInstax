@@ -166,7 +166,11 @@
   color: #263238;
   font-family:
     'Segoe Print', 'Bradley Hand ITC', 'Comic Sans MS', 'Comic Sans', cursive;
-  font-size: calc(var(--syninstax-frame-width, 16px) * 1.25);
+  font-size: clamp(
+    18px,
+    calc(var(--syninstax-frame-width, 16px) * 1.75),
+    42px
+  );
   font-style: italic;
   font-weight: 800;
   line-height: 1.1;
