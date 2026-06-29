@@ -80,7 +80,7 @@ export default class PhotoStackRenderer {
     img.className = 'syninstax-media syninstax-image';
     img.alt = '';
     img.src = image.src;
-    this.sizeMedia(img, this.getMediaAspect(image));
+    this.sizeMedia(img);
     return this.addMediaCard(container, img, options);
   }
 
@@ -103,9 +103,9 @@ export default class PhotoStackRenderer {
     source.type = mimeType;
     video.appendChild(source);
 
-    this.sizeMedia(video, window.innerWidth / window.innerHeight);
+    this.sizeMedia(video);
     video.addEventListener('loadedmetadata', () => {
-      this.sizeMedia(video, this.getMediaAspect(video));
+      this.sizeMedia(video);
       void video.play();
     });
 
@@ -152,12 +152,6 @@ export default class PhotoStackRenderer {
     card.style.setProperty('--syninstax-in-y', entry.y);
     card.appendChild(media);
     if (options.caption) {
-      const captionMetrics = this.getCaptionMetrics(options.caption, media);
-      card.style.setProperty(
-        '--syninstax-card-footer-height',
-        `${captionMetrics.footerHeight}px`
-      );
-
       const caption = document.createElement('div');
       caption.className = 'syninstax-caption';
       caption.textContent = options.caption;
@@ -252,83 +246,12 @@ export default class PhotoStackRenderer {
     return { width, height };
   }
 
-  private sizeMedia(media: StackMediaElement, aspect: number): void {
-    const box = this.fitPhotoToContainer(aspect);
+  private sizeMedia(media: StackMediaElement): void {
+    const box = this.computePhotoBox();
+    media.style.width = `${box.width}px`;
+    media.style.height = `${box.height}px`;
     media.style.maxWidth = `${box.width}px`;
     media.style.maxHeight = `${box.height}px`;
-  }
-
-  private getMediaAspect(media: StackMediaElement): number {
-    if (media instanceof HTMLVideoElement) {
-      return media.videoWidth && media.videoHeight
-        ? media.videoWidth / media.videoHeight
-        : window.innerWidth / window.innerHeight;
-    }
-
-    return media.naturalWidth && media.naturalHeight
-      ? media.naturalWidth / media.naturalHeight
-      : window.innerWidth / window.innerHeight;
-  }
-
-  private getCaptionMetrics(
-    caption: string,
-    media: StackMediaElement
-  ): { footerHeight: number; lines: number } {
-    const { frameWidth } = this.config;
-    const baseFooterHeight = frameWidth * 3.75;
-    const fontSize = Math.min(42, Math.max(18, frameWidth * 1.75));
-    const lineHeight = fontSize * 1.05;
-    const mediaWidth =
-      parseFloat(media.style.maxWidth) || this.computePhotoBox().width;
-    const averageCharacterWidth = fontSize * 0.58;
-    const availableCharacters = Math.max(
-      1,
-      Math.floor(mediaWidth / averageCharacterWidth)
-    );
-    const lines = Math.max(1, Math.ceil(caption.length / availableCharacters));
-    const verticalPadding = frameWidth * 1.2;
-    const footerHeight = Math.max(
-      baseFooterHeight,
-      Math.ceil(lines * lineHeight + verticalPadding)
-    );
-
-    return { footerHeight, lines };
-  }
-
-  private fitPhotoToContainer(aspect: number): {
-    width: number;
-    height: number;
-  } {
-    const containerWidth = this.parseLength(
-      this.config.stackWidth,
-      window.innerWidth
-    );
-    const containerHeight = this.parseLength(
-      this.config.stackHeight,
-      window.innerHeight
-    );
-    const frame = this.config.frameWidth;
-    const theta = (this.config.maxRotation * Math.PI) / 180;
-    const cos = Math.cos(theta);
-    const sin = Math.sin(theta);
-    const offset = this.config.maxOffset;
-    const boundsWidth = containerWidth - 2 * offset;
-    const boundsHeight = containerHeight - 2 * offset;
-    const wFromWidth =
-      (boundsWidth - frame * (2 * cos + 4.75 * sin)) / (cos + sin / aspect);
-    const wFromHeight =
-      (boundsHeight - frame * (2 * sin + 4.75 * cos)) / (sin + cos / aspect);
-    let width = Math.min(wFromWidth, wFromHeight);
-
-    if (this.config.photoWidth !== null) {
-      width = Math.min(width, this.config.photoWidth);
-    }
-    if (this.config.photoHeight !== null) {
-      width = Math.min(width, this.config.photoHeight * aspect);
-    }
-
-    width = Math.max(1, Math.floor(width));
-    return { width, height: Math.max(1, Math.floor(width / aspect)) };
   }
 
   private removeOldestCard(element: HTMLDivElement): void {

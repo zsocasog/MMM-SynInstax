@@ -132,10 +132,7 @@
   left: 50%;
   background: var(--syninstax-frame-color, #fff);
   padding: var(--syninstax-frame-width, 16px);
-  padding-bottom: var(
-    --syninstax-card-footer-height,
-    var(--syninstax-footer-height, 60px)
-  );
+  padding-bottom: var(--syninstax-footer-height, 60px);
   box-shadow:
     0 8px 24px rgba(0, 0, 0, 0.4),
     0 2px 6px rgba(0, 0, 0, 0.3);
@@ -149,11 +146,12 @@
 
 .syninstax-media {
   display: block;
-  width: auto;
-  height: auto;
+  width: var(--syninstax-photo-width, 100%);
+  height: var(--syninstax-photo-height, 100%);
   max-width: var(--syninstax-photo-width, 100%);
   max-height: var(--syninstax-photo-height, 100%);
-  object-fit: contain;
+  object-fit: cover;
+  object-position: center;
 }
 
 .syninstax-video {
@@ -169,10 +167,7 @@
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
-  height: var(
-    --syninstax-card-footer-height,
-    var(--syninstax-footer-height, 60px)
-  );
+  height: var(--syninstax-footer-height, 60px);
   min-width: 0;
   overflow: hidden;
   color: #151515;
@@ -185,9 +180,9 @@
   letter-spacing: 0;
   line-height: 1.05;
   text-align: center;
+  text-overflow: ellipsis;
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.7);
-  overflow-wrap: anywhere;
-  white-space: normal;
+  white-space: nowrap;
 }
 
 @keyframes syninstax-fly-in {
