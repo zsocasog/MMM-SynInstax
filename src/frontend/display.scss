@@ -150,7 +150,7 @@
   height: var(--syninstax-photo-height, 100%);
   max-width: var(--syninstax-photo-width, 100%);
   max-height: var(--syninstax-photo-height, 100%);
-  object-fit: cover;
+  object-fit: contain;
   object-position: center;
 }
 
