@@ -152,6 +152,12 @@ export default class PhotoStackRenderer {
     card.style.setProperty('--syninstax-in-y', entry.y);
     card.appendChild(media);
     if (options.caption) {
+      const captionMetrics = this.getCaptionMetrics(options.caption, media);
+      card.style.setProperty(
+        '--syninstax-card-footer-height',
+        `${captionMetrics.footerHeight}px`
+      );
+
       const caption = document.createElement('div');
       caption.className = 'syninstax-caption';
       caption.textContent = options.caption;
@@ -262,6 +268,31 @@ export default class PhotoStackRenderer {
     return media.naturalWidth && media.naturalHeight
       ? media.naturalWidth / media.naturalHeight
       : window.innerWidth / window.innerHeight;
+  }
+
+  private getCaptionMetrics(
+    caption: string,
+    media: StackMediaElement
+  ): { footerHeight: number; lines: number } {
+    const { frameWidth } = this.config;
+    const baseFooterHeight = frameWidth * 3.75;
+    const fontSize = Math.min(42, Math.max(18, frameWidth * 1.75));
+    const lineHeight = fontSize * 1.05;
+    const mediaWidth =
+      parseFloat(media.style.maxWidth) || this.computePhotoBox().width;
+    const averageCharacterWidth = fontSize * 0.58;
+    const availableCharacters = Math.max(
+      1,
+      Math.floor(mediaWidth / averageCharacterWidth)
+    );
+    const lines = Math.max(1, Math.ceil(caption.length / availableCharacters));
+    const verticalPadding = frameWidth * 1.2;
+    const footerHeight = Math.max(
+      baseFooterHeight,
+      Math.ceil(lines * lineHeight + verticalPadding)
+    );
+
+    return { footerHeight, lines };
   }
 
   private fitPhotoToContainer(aspect: number): {

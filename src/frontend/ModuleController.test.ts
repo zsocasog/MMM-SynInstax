@@ -717,6 +717,88 @@ describe('ModuleController', () => {
         'Budapest - 24.06.01'
       );
     });
+
+    it('should expand the instax footer for long multiline captions', () => {
+      const instaxController = new ModuleController(
+        {
+          ...mockConfig,
+          displayMode: 'instax',
+          stackSize: 4,
+          animateInitialStack: false,
+          stackWidth: '100vw',
+          stackHeight: '100vh',
+          stackTop: '0',
+          stackRight: 'auto',
+          stackBottom: 'auto',
+          stackLeft: '0',
+          stackTransform: 'none',
+          stackFixed: true,
+          stackZIndex: 0,
+          maxRotation: 8,
+          maxOffset: 30,
+          frameColor: '#fff',
+          stackBackgroundColor: 'transparent',
+          frameWidth: 16,
+          photoWidth: null,
+          photoHeight: null,
+          flyInDuration: 1200,
+          flyOutDuration: 800,
+          showPhotoCaption: true,
+          showPhotoCaptionDate: true,
+          showPhotoCaptionLocation: true,
+          photoCaptionDateFormat: 'YY.MM.DD'
+        } as ModuleConfig,
+        'test-module',
+        mockCallbacks,
+        mockLog,
+        mockMoment,
+        mockEXIF
+      );
+      instaxController.start();
+      document.body.appendChild(instaxController.getDom());
+
+      const imageInfo: ImageInfo = {
+        identifier: 'test-module',
+        path: 'portrait.jpg',
+        data: 'data:image/jpeg;base64,test',
+        captionLocation: 'San Sebastian de la Gomera Old Town Harbor',
+        captionDate: new Date(2024, 5, 1).getTime(),
+        index: 1,
+        total: 10
+      };
+      const image = document.createElement('img');
+      Object.defineProperty(image, 'naturalWidth', {
+        value: 600,
+        configurable: true
+      });
+      Object.defineProperty(image, 'naturalHeight', {
+        value: 1200,
+        configurable: true
+      });
+      (
+        instaxController as unknown as {
+          handleImageLoad: (
+            loadedImage: HTMLImageElement,
+            loadedImageInfo: ImageInfo
+          ) => void;
+        }
+      ).handleImageLoad(image, imageInfo);
+
+      const cards = Array.from(document.querySelectorAll('.syninstax-card'));
+      const card = cards.at(-1) as HTMLElement;
+      const footerHeight = parseFloat(
+        card.style.getPropertyValue('--syninstax-card-footer-height')
+      );
+
+      expect(footerHeight).toBeGreaterThan(16 * 3.75);
+      const captions = Array.from(
+        document.querySelectorAll('.syninstax-caption')
+      );
+
+      expect(captions.at(-1)?.textContent).toBe(
+        'San Sebastian de la Gomera Old Town Harbor - 24.06.01'
+      );
+    });
   });
 
   describe('updateImage', () => {
