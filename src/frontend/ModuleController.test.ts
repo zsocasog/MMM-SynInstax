@@ -719,6 +719,41 @@ describe('ModuleController', () => {
       const media = document.querySelector('.syninstax-media') as HTMLElement;
       expect(media.style.width).toBeTruthy();
       expect(media.style.height).toBeTruthy();
+      expect(parseFloat(media.style.width)).toBeGreaterThan(
+        parseFloat(media.style.height)
+      );
+
+      const portraitInfo: ImageInfo = {
+        ...imageInfo,
+        path: 'portrait.jpg',
+        captionLocation: 'Szeged',
+        index: 2
+      };
+      const portrait = document.createElement('img');
+      Object.defineProperty(portrait, 'naturalWidth', {
+        value: 600,
+        configurable: true
+      });
+      Object.defineProperty(portrait, 'naturalHeight', {
+        value: 1200,
+        configurable: true
+      });
+      (
+        instaxController as unknown as {
+          handleImageLoad: (
+            loadedImage: HTMLImageElement,
+            loadedImageInfo: ImageInfo
+          ) => void;
+        }
+      ).handleImageLoad(portrait, portraitInfo);
+
+      const mediaItems = Array.from(
+        document.querySelectorAll('.syninstax-media')
+      ) as HTMLElement[];
+      const portraitMedia = mediaItems.at(-1) as HTMLElement;
+      expect(parseFloat(portraitMedia.style.height)).toBeGreaterThan(
+        parseFloat(portraitMedia.style.width)
+      );
     });
   });
 

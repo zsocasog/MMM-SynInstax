@@ -17,6 +17,9 @@ interface CardOptions {
   animate?: boolean;
 }
 
+const LANDSCAPE_PHOTO_ASPECT = 4 / 3;
+const PORTRAIT_PHOTO_ASPECT = 3 / 4;
+
 export default class PhotoStackRenderer {
   private readonly config: ModuleConfig;
 
@@ -30,7 +33,7 @@ export default class PhotoStackRenderer {
     const container = document.createElement('div');
     container.className = 'syninstax-stack-container';
 
-    const box = this.computePhotoBox();
+    const box = this.computePhotoBox(LANDSCAPE_PHOTO_ASPECT);
     const { frameWidth } = this.config;
     const footerHeight = frameWidth * 3.75;
     const captionFontSize = Math.min(42, Math.max(18, frameWidth * 1.75));
@@ -80,7 +83,7 @@ export default class PhotoStackRenderer {
     img.className = 'syninstax-media syninstax-image';
     img.alt = '';
     img.src = image.src;
-    this.sizeMedia(img);
+    this.sizeMedia(img, this.getMediaAspect(image));
     return this.addMediaCard(container, img, options);
   }
 
@@ -103,9 +106,9 @@ export default class PhotoStackRenderer {
     source.type = mimeType;
     video.appendChild(source);
 
-    this.sizeMedia(video);
+    this.sizeMedia(video, LANDSCAPE_PHOTO_ASPECT);
     video.addEventListener('loadedmetadata', () => {
-      this.sizeMedia(video);
+      this.sizeMedia(video, this.getMediaAspect(video));
       void video.play();
     });
 
@@ -209,7 +212,10 @@ export default class PhotoStackRenderer {
     style.zIndex = String(this.config.stackZIndex);
   }
 
-  private computePhotoBox(): { width: number; height: number } {
+  private computePhotoBox(targetAspect: number): {
+    width: number;
+    height: number;
+  } {
     if (this.config.photoWidth !== null && this.config.photoHeight !== null) {
       return { width: this.config.photoWidth, height: this.config.photoHeight };
     }
@@ -223,35 +229,55 @@ export default class PhotoStackRenderer {
       window.innerHeight
     );
     const frame = this.config.frameWidth;
-    const chromeW = frame * 2;
-    const chromeH = frame * 4.75;
     const theta = (this.config.maxRotation * Math.PI) / 180;
     const cos = Math.cos(theta);
     const sin = Math.sin(theta);
     const offset = this.config.maxOffset;
     const availableWidth = containerWidth - 2 * offset;
     const availableHeight = containerHeight - 2 * offset;
-    const aspect = containerWidth / containerHeight;
+    const wFromWidth =
+      (availableWidth - frame * (2 * cos + 4.75 * sin)) /
+      (cos + sin / targetAspect);
+    const wFromHeight =
+      (availableHeight - frame * (2 * sin + 4.75 * cos)) /
+      (sin + cos / targetAspect);
+    let width = Math.min(wFromWidth, wFromHeight);
 
-    const cardW = Math.min(
-      availableWidth / (cos + aspect * sin),
-      availableHeight / (sin + aspect * cos)
-    );
-    const width =
-      this.config.photoWidth ?? Math.max(1, Math.round(cardW - chromeW));
-    const height =
-      this.config.photoHeight ??
-      Math.max(1, Math.round(cardW / aspect - chromeH));
+    if (this.config.photoWidth !== null) {
+      width = Math.min(width, this.config.photoWidth);
+    }
+    if (this.config.photoHeight !== null) {
+      width = Math.min(width, this.config.photoHeight * targetAspect);
+    }
+
+    width = Math.max(1, Math.floor(width));
+    const height = Math.max(1, Math.floor(width / targetAspect));
 
     return { width, height };
   }
 
-  private sizeMedia(media: StackMediaElement): void {
-    const box = this.computePhotoBox();
+  private sizeMedia(media: StackMediaElement, sourceAspect: number): void {
+    const box = this.computePhotoBox(this.getFrameAspect(sourceAspect));
     media.style.width = `${box.width}px`;
     media.style.height = `${box.height}px`;
     media.style.maxWidth = `${box.width}px`;
     media.style.maxHeight = `${box.height}px`;
+  }
+
+  private getMediaAspect(media: StackMediaElement): number {
+    if (media instanceof HTMLVideoElement) {
+      return media.videoWidth && media.videoHeight
+        ? media.videoWidth / media.videoHeight
+        : LANDSCAPE_PHOTO_ASPECT;
+    }
+
+    return media.naturalWidth && media.naturalHeight
+      ? media.naturalWidth / media.naturalHeight
+      : LANDSCAPE_PHOTO_ASPECT;
+  }
+
+  private getFrameAspect(sourceAspect: number): number {
+    return sourceAspect >= 1 ? LANDSCAPE_PHOTO_ASPECT : PORTRAIT_PHOTO_ASPECT;
   }
 
   private removeOldestCard(element: HTMLDivElement): void {
