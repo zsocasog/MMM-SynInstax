@@ -818,6 +818,39 @@ describe('ModuleController', () => {
       expect(
         parseFloat(tallMedia.style.width) / parseFloat(tallMedia.style.height)
       ).toBeCloseTo(9 / 16, 1);
+
+      const narrowInfo: ImageInfo = {
+        ...imageInfo,
+        path: 'narrow.jpg',
+        captionLocation: 'Miskolc',
+        index: 5
+      };
+      const narrow = document.createElement('img');
+      Object.defineProperty(narrow, 'naturalWidth', {
+        value: 400,
+        configurable: true
+      });
+      Object.defineProperty(narrow, 'naturalHeight', {
+        value: 1200,
+        configurable: true
+      });
+      (
+        instaxController as unknown as {
+          handleImageLoad: (
+            loadedImage: HTMLImageElement,
+            loadedImageInfo: ImageInfo
+          ) => void;
+        }
+      ).handleImageLoad(narrow, narrowInfo);
+
+      const afterNarrowMediaItems = Array.from(
+        document.querySelectorAll('.syninstax-media')
+      ) as HTMLElement[];
+      const narrowMedia = afterNarrowMediaItems.at(-1) as HTMLElement;
+      expect(
+        parseFloat(narrowMedia.style.width) /
+          parseFloat(narrowMedia.style.height)
+      ).toBeCloseTo(1 / 3, 1);
     });
   });
 
