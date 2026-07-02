@@ -754,6 +754,70 @@ describe('ModuleController', () => {
       expect(parseFloat(portraitMedia.style.height)).toBeGreaterThan(
         parseFloat(portraitMedia.style.width)
       );
+
+      const wideInfo: ImageInfo = {
+        ...imageInfo,
+        path: 'wide.jpg',
+        captionLocation: 'Balaton',
+        index: 3
+      };
+      const wide = document.createElement('img');
+      Object.defineProperty(wide, 'naturalWidth', {
+        value: 1920,
+        configurable: true
+      });
+      Object.defineProperty(wide, 'naturalHeight', {
+        value: 1080,
+        configurable: true
+      });
+      (
+        instaxController as unknown as {
+          handleImageLoad: (
+            loadedImage: HTMLImageElement,
+            loadedImageInfo: ImageInfo
+          ) => void;
+        }
+      ).handleImageLoad(wide, wideInfo);
+
+      const afterWideMediaItems = Array.from(
+        document.querySelectorAll('.syninstax-media')
+      ) as HTMLElement[];
+      const wideMedia = afterWideMediaItems.at(-1) as HTMLElement;
+      expect(
+        parseFloat(wideMedia.style.width) / parseFloat(wideMedia.style.height)
+      ).toBeGreaterThan(1.55);
+
+      const tallInfo: ImageInfo = {
+        ...imageInfo,
+        path: 'tall.jpg',
+        captionLocation: 'Pecs',
+        index: 4
+      };
+      const tall = document.createElement('img');
+      Object.defineProperty(tall, 'naturalWidth', {
+        value: 1080,
+        configurable: true
+      });
+      Object.defineProperty(tall, 'naturalHeight', {
+        value: 1920,
+        configurable: true
+      });
+      (
+        instaxController as unknown as {
+          handleImageLoad: (
+            loadedImage: HTMLImageElement,
+            loadedImageInfo: ImageInfo
+          ) => void;
+        }
+      ).handleImageLoad(tall, tallInfo);
+
+      const afterTallMediaItems = Array.from(
+        document.querySelectorAll('.syninstax-media')
+      ) as HTMLElement[];
+      const tallMedia = afterTallMediaItems.at(-1) as HTMLElement;
+      expect(
+        parseFloat(tallMedia.style.width) / parseFloat(tallMedia.style.height)
+      ).toBeLessThan(0.65);
     });
   });
 
