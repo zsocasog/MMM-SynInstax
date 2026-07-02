@@ -719,9 +719,9 @@ describe('ModuleController', () => {
       const media = document.querySelector('.syninstax-media') as HTMLElement;
       expect(media.style.width).toBeTruthy();
       expect(media.style.height).toBeTruthy();
-      expect(parseFloat(media.style.width)).toBeGreaterThan(
-        parseFloat(media.style.height)
-      );
+      expect(
+        parseFloat(media.style.width) / parseFloat(media.style.height)
+      ).toBeCloseTo(4 / 3, 1);
 
       const portraitInfo: ImageInfo = {
         ...imageInfo,
@@ -785,7 +785,7 @@ describe('ModuleController', () => {
       const wideMedia = afterWideMediaItems.at(-1) as HTMLElement;
       expect(
         parseFloat(wideMedia.style.width) / parseFloat(wideMedia.style.height)
-      ).toBeGreaterThan(1.55);
+      ).toBeCloseTo(16 / 9, 1);
 
       const tallInfo: ImageInfo = {
         ...imageInfo,
@@ -817,7 +817,7 @@ describe('ModuleController', () => {
       const tallMedia = afterTallMediaItems.at(-1) as HTMLElement;
       expect(
         parseFloat(tallMedia.style.width) / parseFloat(tallMedia.style.height)
-      ).toBeLessThan(0.65);
+      ).toBeCloseTo(9 / 16, 1);
     });
   });
 

@@ -17,10 +17,9 @@ interface CardOptions {
   animate?: boolean;
 }
 
-const WIDE_PHOTO_ASPECT = 16 / 9;
-const LANDSCAPE_PHOTO_ASPECT = 4 / 3;
-const PORTRAIT_PHOTO_ASPECT = 3 / 4;
-const TALL_PHOTO_ASPECT = 9 / 16;
+const MAX_PHOTO_ASPECT = 16 / 9;
+const DEFAULT_PHOTO_ASPECT = 4 / 3;
+const MIN_PHOTO_ASPECT = 9 / 16;
 
 export default class PhotoStackRenderer {
   private readonly config: ModuleConfig;
@@ -35,7 +34,7 @@ export default class PhotoStackRenderer {
     const container = document.createElement('div');
     container.className = 'syninstax-stack-container';
 
-    const box = this.computePhotoBox(LANDSCAPE_PHOTO_ASPECT);
+    const box = this.computePhotoBox(DEFAULT_PHOTO_ASPECT);
     const { frameWidth } = this.config;
     const footerHeight = frameWidth * 3.75;
     const captionFontSize = Math.min(42, Math.max(18, frameWidth * 1.75));
@@ -108,7 +107,7 @@ export default class PhotoStackRenderer {
     source.type = mimeType;
     video.appendChild(source);
 
-    this.sizeMedia(video, LANDSCAPE_PHOTO_ASPECT);
+    this.sizeMedia(video, DEFAULT_PHOTO_ASPECT);
     video.addEventListener('loadedmetadata', () => {
       this.sizeMedia(video, this.getMediaAspect(video));
       void video.play();
@@ -270,28 +269,16 @@ export default class PhotoStackRenderer {
     if (media instanceof HTMLVideoElement) {
       return media.videoWidth && media.videoHeight
         ? media.videoWidth / media.videoHeight
-        : LANDSCAPE_PHOTO_ASPECT;
+        : DEFAULT_PHOTO_ASPECT;
     }
 
     return media.naturalWidth && media.naturalHeight
       ? media.naturalWidth / media.naturalHeight
-      : LANDSCAPE_PHOTO_ASPECT;
+      : DEFAULT_PHOTO_ASPECT;
   }
 
   private getFrameAspect(sourceAspect: number): number {
-    if (sourceAspect >= 1.55) {
-      return WIDE_PHOTO_ASPECT;
-    }
-
-    if (sourceAspect >= 1) {
-      return LANDSCAPE_PHOTO_ASPECT;
-    }
-
-    if (sourceAspect <= 0.65) {
-      return TALL_PHOTO_ASPECT;
-    }
-
-    return PORTRAIT_PHOTO_ASPECT;
+    return Math.min(MAX_PHOTO_ASPECT, Math.max(MIN_PHOTO_ASPECT, sourceAspect));
   }
 
   private removeOldestCard(element: HTMLDivElement): void {
