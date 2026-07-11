@@ -17,9 +17,12 @@ interface CardOptions {
   animate?: boolean;
 }
 
-const MAX_PHOTO_ASPECT = 3;
-const DEFAULT_PHOTO_ASPECT = 4 / 3;
-const MIN_PHOTO_ASPECT = 1 / 3;
+const WIDE_PHOTO_ASPECT = 16 / 9;
+const LANDSCAPE_PHOTO_ASPECT = 4 / 3;
+const PORTRAIT_PHOTO_ASPECT = 2 / 3;
+const DEFAULT_PHOTO_ASPECT = LANDSCAPE_PHOTO_ASPECT;
+const WIDE_PHOTO_THRESHOLD = 1.55;
+const LANDSCAPE_PHOTO_THRESHOLD = 1;
 
 export default class PhotoStackRenderer {
   private readonly config: ModuleConfig;
@@ -278,7 +281,16 @@ export default class PhotoStackRenderer {
   }
 
   private getFrameAspect(sourceAspect: number): number {
-    return Math.min(MAX_PHOTO_ASPECT, Math.max(MIN_PHOTO_ASPECT, sourceAspect));
+    if (!Number.isFinite(sourceAspect) || sourceAspect <= 0) {
+      return DEFAULT_PHOTO_ASPECT;
+    }
+    if (sourceAspect >= WIDE_PHOTO_THRESHOLD) {
+      return WIDE_PHOTO_ASPECT;
+    }
+    if (sourceAspect >= LANDSCAPE_PHOTO_THRESHOLD) {
+      return LANDSCAPE_PHOTO_ASPECT;
+    }
+    return PORTRAIT_PHOTO_ASPECT;
   }
 
   private removeOldestCard(element: HTMLDivElement): void {

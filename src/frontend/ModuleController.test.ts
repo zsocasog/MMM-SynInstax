@@ -731,7 +731,7 @@ describe('ModuleController', () => {
       };
       const portrait = document.createElement('img');
       Object.defineProperty(portrait, 'naturalWidth', {
-        value: 600,
+        value: 900,
         configurable: true
       });
       Object.defineProperty(portrait, 'naturalHeight', {
@@ -754,6 +754,10 @@ describe('ModuleController', () => {
       expect(parseFloat(portraitMedia.style.height)).toBeGreaterThan(
         parseFloat(portraitMedia.style.width)
       );
+      expect(
+        parseFloat(portraitMedia.style.width) /
+          parseFloat(portraitMedia.style.height)
+      ).toBeCloseTo(2 / 3, 1);
 
       const wideInfo: ImageInfo = {
         ...imageInfo,
@@ -817,7 +821,7 @@ describe('ModuleController', () => {
       const tallMedia = afterTallMediaItems.at(-1) as HTMLElement;
       expect(
         parseFloat(tallMedia.style.width) / parseFloat(tallMedia.style.height)
-      ).toBeCloseTo(9 / 16, 1);
+      ).toBeCloseTo(2 / 3, 1);
 
       const narrowInfo: ImageInfo = {
         ...imageInfo,
@@ -850,7 +854,7 @@ describe('ModuleController', () => {
       expect(
         parseFloat(narrowMedia.style.width) /
           parseFloat(narrowMedia.style.height)
-      ).toBeCloseTo(1 / 3, 1);
+      ).toBeCloseTo(2 / 3, 1);
     });
   });
 
