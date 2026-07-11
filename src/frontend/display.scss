@@ -144,7 +144,38 @@
   will-change: transform;
 }
 
+.syninstax-photo-area {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  background: #111;
+  isolation: isolate;
+}
+
+.syninstax-photo-area--filled::before {
+  position: absolute;
+  z-index: 0;
+  inset: -8%;
+  background-image: inherit;
+  background-position: center;
+  background-size: cover;
+  content: '';
+  filter: blur(12px);
+  opacity: 0.45;
+  transform: scale(1.08);
+}
+
+.syninstax-photo-area--filled::after {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.12);
+  content: '';
+}
+
 .syninstax-media {
+  position: relative;
+  z-index: 1;
   display: block;
   width: var(--syninstax-photo-width, 100%);
   height: var(--syninstax-photo-height, 100%);

@@ -159,7 +159,7 @@ export default class PhotoStackRenderer {
     );
     card.style.setProperty('--syninstax-in-x', entry.x);
     card.style.setProperty('--syninstax-in-y', entry.y);
-    card.appendChild(media);
+    card.appendChild(this.createPhotoArea(media));
     if (options.caption) {
       const caption = document.createElement('div');
       caption.className = 'syninstax-caption';
@@ -264,10 +264,45 @@ export default class PhotoStackRenderer {
 
   private sizeMedia(media: StackMediaElement, sourceAspect: number): void {
     const box = this.computePhotoBox(this.getFrameAspect(sourceAspect));
-    media.style.width = `${box.width}px`;
-    media.style.height = `${box.height}px`;
-    media.style.maxWidth = `${box.width}px`;
-    media.style.maxHeight = `${box.height}px`;
+    this.applyMediaBox(media, box);
+    if (this.isPhotoArea(media.parentElement)) {
+      this.applyMediaBox(media.parentElement, box);
+    }
+  }
+
+  private createPhotoArea(media: StackMediaElement): HTMLDivElement {
+    const photoArea = document.createElement('div');
+    photoArea.className = 'syninstax-photo-area';
+    this.copyMediaBox(photoArea, media);
+
+    if (media instanceof HTMLImageElement) {
+      photoArea.classList.add('syninstax-photo-area--filled');
+      photoArea.style.backgroundImage = `url(${JSON.stringify(media.src)})`;
+    }
+
+    photoArea.appendChild(media);
+    return photoArea;
+  }
+
+  private applyMediaBox(
+    element: HTMLElement,
+    box: { width: number; height: number }
+  ): void {
+    element.style.width = `${box.width}px`;
+    element.style.height = `${box.height}px`;
+    element.style.maxWidth = `${box.width}px`;
+    element.style.maxHeight = `${box.height}px`;
+  }
+
+  private copyMediaBox(target: HTMLElement, source: HTMLElement): void {
+    target.style.width = source.style.width;
+    target.style.height = source.style.height;
+    target.style.maxWidth = source.style.maxWidth;
+    target.style.maxHeight = source.style.maxHeight;
+  }
+
+  private isPhotoArea(element: Element | null): element is HTMLDivElement {
+    return element?.classList.contains('syninstax-photo-area') ?? false;
   }
 
   private getMediaAspect(media: StackMediaElement): number {
