@@ -757,7 +757,7 @@ describe('ModuleController', () => {
       expect(
         parseFloat(portraitMedia.style.width) /
           parseFloat(portraitMedia.style.height)
-      ).toBeCloseTo(2 / 3, 1);
+      ).toBeCloseTo(3 / 4, 1);
 
       const wideInfo: ImageInfo = {
         ...imageInfo,

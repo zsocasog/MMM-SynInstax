@@ -19,10 +19,12 @@ interface CardOptions {
 
 const WIDE_PHOTO_ASPECT = 16 / 9;
 const LANDSCAPE_PHOTO_ASPECT = 4 / 3;
-const PORTRAIT_PHOTO_ASPECT = 2 / 3;
+const PORTRAIT_PHOTO_ASPECT = 3 / 4;
+const TALL_PHOTO_ASPECT = 2 / 3;
 const DEFAULT_PHOTO_ASPECT = LANDSCAPE_PHOTO_ASPECT;
 const WIDE_PHOTO_THRESHOLD = 1.55;
 const LANDSCAPE_PHOTO_THRESHOLD = 1;
+const TALL_PHOTO_THRESHOLD = 0.65;
 
 export default class PhotoStackRenderer {
   private readonly config: ModuleConfig;
@@ -289,6 +291,9 @@ export default class PhotoStackRenderer {
     }
     if (sourceAspect >= LANDSCAPE_PHOTO_THRESHOLD) {
       return LANDSCAPE_PHOTO_ASPECT;
+    }
+    if (sourceAspect <= TALL_PHOTO_THRESHOLD) {
+      return TALL_PHOTO_ASPECT;
     }
     return PORTRAIT_PHOTO_ASPECT;
   }
