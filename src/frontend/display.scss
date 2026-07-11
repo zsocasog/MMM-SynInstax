@@ -155,21 +155,21 @@
 .syninstax-photo-area--filled::before {
   position: absolute;
   z-index: 0;
-  inset: -8%;
+  inset: -12%;
   background-image: inherit;
   background-position: center;
   background-size: cover;
   content: '';
-  filter: blur(12px);
-  opacity: 0.45;
-  transform: scale(1.08);
+  filter: blur(26px) saturate(0.75) brightness(0.85);
+  opacity: 0.38;
+  transform: scale(1.12);
 }
 
 .syninstax-photo-area--filled::after {
   position: absolute;
   z-index: 0;
   inset: 0;
-  background: rgba(0, 0, 0, 0.12);
+  background: rgba(0, 0, 0, 0.22);
   content: '';
 }
 
