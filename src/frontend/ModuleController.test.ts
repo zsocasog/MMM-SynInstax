@@ -719,16 +719,6 @@ describe('ModuleController', () => {
       const media = document.querySelector('.syninstax-media') as HTMLElement;
       expect(media.style.width).toBeTruthy();
       expect(media.style.height).toBeTruthy();
-      const photoArea = document.querySelector(
-        '.syninstax-photo-area'
-      ) as HTMLElement;
-      expect(photoArea).toBeTruthy();
-      expect(photoArea.contains(media)).toBe(true);
-      expect(photoArea.classList.contains('syninstax-photo-area--filled')).toBe(
-        true
-      );
-      expect(photoArea.style.width).toBe(media.style.width);
-      expect(photoArea.style.height).toBe(media.style.height);
       expect(
         parseFloat(media.style.width) / parseFloat(media.style.height)
       ).toBeCloseTo(4 / 3, 1);
@@ -831,7 +821,7 @@ describe('ModuleController', () => {
       const tallMedia = afterTallMediaItems.at(-1) as HTMLElement;
       expect(
         parseFloat(tallMedia.style.width) / parseFloat(tallMedia.style.height)
-      ).toBeCloseTo(2 / 3, 1);
+      ).toBeCloseTo(9 / 16, 1);
 
       const narrowInfo: ImageInfo = {
         ...imageInfo,
@@ -864,7 +854,7 @@ describe('ModuleController', () => {
       expect(
         parseFloat(narrowMedia.style.width) /
           parseFloat(narrowMedia.style.height)
-      ).toBeCloseTo(2 / 3, 1);
+      ).toBeCloseTo(1 / 3, 1);
     });
   });
 

@@ -17,14 +17,9 @@ interface CardOptions {
   animate?: boolean;
 }
 
-const WIDE_PHOTO_ASPECT = 16 / 9;
-const LANDSCAPE_PHOTO_ASPECT = 4 / 3;
-const PORTRAIT_PHOTO_ASPECT = 3 / 4;
-const TALL_PHOTO_ASPECT = 2 / 3;
-const DEFAULT_PHOTO_ASPECT = LANDSCAPE_PHOTO_ASPECT;
-const WIDE_PHOTO_THRESHOLD = 1.55;
-const LANDSCAPE_PHOTO_THRESHOLD = 1;
-const TALL_PHOTO_THRESHOLD = 0.65;
+const MAX_PHOTO_ASPECT = 3;
+const DEFAULT_PHOTO_ASPECT = 4 / 3;
+const MIN_PHOTO_ASPECT = 1 / 3;
 
 export default class PhotoStackRenderer {
   private readonly config: ModuleConfig;
@@ -159,7 +154,7 @@ export default class PhotoStackRenderer {
     );
     card.style.setProperty('--syninstax-in-x', entry.x);
     card.style.setProperty('--syninstax-in-y', entry.y);
-    card.appendChild(this.createPhotoArea(media));
+    card.appendChild(media);
     if (options.caption) {
       const caption = document.createElement('div');
       caption.className = 'syninstax-caption';
@@ -264,45 +259,10 @@ export default class PhotoStackRenderer {
 
   private sizeMedia(media: StackMediaElement, sourceAspect: number): void {
     const box = this.computePhotoBox(this.getFrameAspect(sourceAspect));
-    this.applyMediaBox(media, box);
-    if (this.isPhotoArea(media.parentElement)) {
-      this.applyMediaBox(media.parentElement, box);
-    }
-  }
-
-  private createPhotoArea(media: StackMediaElement): HTMLDivElement {
-    const photoArea = document.createElement('div');
-    photoArea.className = 'syninstax-photo-area';
-    this.copyMediaBox(photoArea, media);
-
-    if (media instanceof HTMLImageElement) {
-      photoArea.classList.add('syninstax-photo-area--filled');
-      photoArea.style.backgroundImage = `url(${JSON.stringify(media.src)})`;
-    }
-
-    photoArea.appendChild(media);
-    return photoArea;
-  }
-
-  private applyMediaBox(
-    element: HTMLElement,
-    box: { width: number; height: number }
-  ): void {
-    element.style.width = `${box.width}px`;
-    element.style.height = `${box.height}px`;
-    element.style.maxWidth = `${box.width}px`;
-    element.style.maxHeight = `${box.height}px`;
-  }
-
-  private copyMediaBox(target: HTMLElement, source: HTMLElement): void {
-    target.style.width = source.style.width;
-    target.style.height = source.style.height;
-    target.style.maxWidth = source.style.maxWidth;
-    target.style.maxHeight = source.style.maxHeight;
-  }
-
-  private isPhotoArea(element: Element | null): element is HTMLDivElement {
-    return element?.classList.contains('syninstax-photo-area') ?? false;
+    media.style.width = `${box.width}px`;
+    media.style.height = `${box.height}px`;
+    media.style.maxWidth = `${box.width}px`;
+    media.style.maxHeight = `${box.height}px`;
   }
 
   private getMediaAspect(media: StackMediaElement): number {
@@ -321,16 +281,7 @@ export default class PhotoStackRenderer {
     if (!Number.isFinite(sourceAspect) || sourceAspect <= 0) {
       return DEFAULT_PHOTO_ASPECT;
     }
-    if (sourceAspect >= WIDE_PHOTO_THRESHOLD) {
-      return WIDE_PHOTO_ASPECT;
-    }
-    if (sourceAspect >= LANDSCAPE_PHOTO_THRESHOLD) {
-      return LANDSCAPE_PHOTO_ASPECT;
-    }
-    if (sourceAspect <= TALL_PHOTO_THRESHOLD) {
-      return TALL_PHOTO_ASPECT;
-    }
-    return PORTRAIT_PHOTO_ASPECT;
+    return Math.min(MAX_PHOTO_ASPECT, Math.max(MIN_PHOTO_ASPECT, sourceAspect));
   }
 
   private removeOldestCard(element: HTMLDivElement): void {
