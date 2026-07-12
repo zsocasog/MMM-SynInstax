@@ -17,9 +17,9 @@ interface CardOptions {
   animate?: boolean;
 }
 
-const MAX_PHOTO_ASPECT = 3;
+const MAX_PHOTO_ASPECT = 16 / 9;
 const DEFAULT_PHOTO_ASPECT = 4 / 3;
-const MIN_PHOTO_ASPECT = 1 / 3;
+const MIN_PHOTO_ASPECT = 9 / 16;
 
 export default class PhotoStackRenderer {
   private readonly config: ModuleConfig;

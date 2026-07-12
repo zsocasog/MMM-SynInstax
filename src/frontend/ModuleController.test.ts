@@ -791,11 +791,81 @@ describe('ModuleController', () => {
         parseFloat(wideMedia.style.width) / parseFloat(wideMedia.style.height)
       ).toBeCloseTo(16 / 9, 1);
 
+      const apscLandscapeInfo: ImageInfo = {
+        ...imageInfo,
+        path: 'apsc-landscape.jpg',
+        captionLocation: 'Eger',
+        index: 4
+      };
+      const apscLandscape = document.createElement('img');
+      Object.defineProperty(apscLandscape, 'naturalWidth', {
+        value: 6000,
+        configurable: true
+      });
+      Object.defineProperty(apscLandscape, 'naturalHeight', {
+        value: 4000,
+        configurable: true
+      });
+      (
+        instaxController as unknown as {
+          handleImageLoad: (
+            loadedImage: HTMLImageElement,
+            loadedImageInfo: ImageInfo
+          ) => void;
+        }
+      ).handleImageLoad(apscLandscape, apscLandscapeInfo);
+
+      const afterApscLandscapeMediaItems = Array.from(
+        document.querySelectorAll('.syninstax-media')
+      ) as HTMLElement[];
+      const apscLandscapeMedia = afterApscLandscapeMediaItems.at(
+        -1
+      ) as HTMLElement;
+      expect(
+        parseFloat(apscLandscapeMedia.style.width) /
+          parseFloat(apscLandscapeMedia.style.height)
+      ).toBeCloseTo(3 / 2, 1);
+
+      const apscPortraitInfo: ImageInfo = {
+        ...imageInfo,
+        path: 'apsc-portrait.jpg',
+        captionLocation: 'Gyor',
+        index: 5
+      };
+      const apscPortrait = document.createElement('img');
+      Object.defineProperty(apscPortrait, 'naturalWidth', {
+        value: 4000,
+        configurable: true
+      });
+      Object.defineProperty(apscPortrait, 'naturalHeight', {
+        value: 6000,
+        configurable: true
+      });
+      (
+        instaxController as unknown as {
+          handleImageLoad: (
+            loadedImage: HTMLImageElement,
+            loadedImageInfo: ImageInfo
+          ) => void;
+        }
+      ).handleImageLoad(apscPortrait, apscPortraitInfo);
+
+      const afterApscPortraitMediaItems = Array.from(
+        document.querySelectorAll('.syninstax-media')
+      ) as HTMLElement[];
+      const apscPortraitMedia = afterApscPortraitMediaItems.at(
+        -1
+      ) as HTMLElement;
+      expect(
+        parseFloat(apscPortraitMedia.style.width) /
+          parseFloat(apscPortraitMedia.style.height)
+      ).toBeCloseTo(2 / 3, 1);
+
       const tallInfo: ImageInfo = {
         ...imageInfo,
         path: 'tall.jpg',
         captionLocation: 'Pecs',
-        index: 4
+        index: 6
       };
       const tall = document.createElement('img');
       Object.defineProperty(tall, 'naturalWidth', {
@@ -827,7 +897,7 @@ describe('ModuleController', () => {
         ...imageInfo,
         path: 'narrow.jpg',
         captionLocation: 'Miskolc',
-        index: 5
+        index: 7
       };
       const narrow = document.createElement('img');
       Object.defineProperty(narrow, 'naturalWidth', {
@@ -854,7 +924,7 @@ describe('ModuleController', () => {
       expect(
         parseFloat(narrowMedia.style.width) /
           parseFloat(narrowMedia.style.height)
-      ).toBeCloseTo(1 / 3, 1);
+      ).toBeCloseTo(9 / 16, 1);
     });
   });
 
